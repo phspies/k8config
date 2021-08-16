@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using k8config.DataModels;
 using MoreLinq;
 using Newtonsoft.Json.Linq;
 
@@ -9,113 +10,242 @@ namespace k8config
 {
     class Program
     {
-        static JObject availbleDefinitions;
-        static int level = 0;
-        static string prompt = "";
-        static List<string> promptArray = new List<string>() { "K8" };
-        static List<GroupType> groupKinds = new List<GroupType>();
-        static List<GroupType> definitions = new List<GroupType>();
-        static List<string> ignoreProperties = new List<string>() { "kind", "apiVersion", "status" };
+
 
         static void Main(string[] args)
         {
-
-            var MyFilePath = "swagger.json";
-            availbleDefinitions = JObject.Parse(File.ReadAllText(MyFilePath));
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(CtlrCHandler);
+            Console.BackgroundColor = ConsoleColor.White;
+            var MyFilePath = @"c:\swagger.json";
+            GlobalVariables.availbleDefinitions = JObject.Parse(File.ReadAllText(MyFilePath));
 
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
 
-            availbleDefinitions.SelectTokens("$..x-kubernetes-group-version-kind").ToList().ForEach(x =>
+            GlobalVariables.availbleDefinitions.SelectTokens("$..x-kubernetes-group-version-kind").ToList().ForEach(x =>
             {
                 if (String.IsNullOrEmpty(x.SelectToken(".group")?.Value<string>()) &&
                     String.IsNullOrEmpty(x.SelectToken(".kind")?.Value<string>()) &&
                     String.IsNullOrEmpty(x.SelectToken(".version")?.Value<string>()))
                 {
                     JContainer rootobject = x.Parent.Parent;
-                    groupKinds.Add(BuildRootObject(rootobject));
+                    if (((JProperty)rootobject.Parent).Name.Contains("Deployment"))
+                    {
+                        GlobalVariables.groupKinds.Add(BuildRootObject(rootobject));
+                    }
                 }
             });
 
 
-            WriteInformationLine($"{groupKinds.DistinctBy(x => x.name).Count()} Definitions found \n");
+            WriteOutput.WriteInformationLine($"{GlobalVariables.groupKinds.DistinctBy(x => x.name).Count()} Definitions found \n");
 
 
             while (true)
             {
-                prompt = string.Join(":", promptArray) + ">";
-                string input = ReadLine.Read(prompt);
-
-
-                switch (input)
+                string input = ReadLine.Read(string.Join(":", GlobalVariables.promptArray) + ">");
+                if (GlobalVariables.valuePromptMode)
                 {
-                    case "new":
-                        if (promptArray.Count() == 1)
-                        {
-                            WriteInformationLine("Creating new definition");
-                            promptArray = new List<string>() { "K8" };
-                        }
-                        break;
-                    case "list":
-                        if (promptArray.Count() == 1)
-                        {
-                            if (definitions.Count > 0)
+                    switch (GlobalVariables.promptArray.Last())
+                    {
+                        case "comment":
+                            GlobalVariables.promptArray.Remove(GlobalVariables.promptArray.Last());
+                            FindCurrentDefinedObject().comment = input;
+                            break;
+                        case "select":
+                            GlobalVariables.promptArray.Remove(GlobalVariables.promptArray.Last());
+                            int index;
+                            if (int.TryParse(input, out index))
                             {
-                                WriteInformationLine("Current definitions");
-                                definitions.ForEach(definition => {
-                                    WriteInformationLine($"> {definition.name}");
-                                });
+                                if (GlobalVariables.definedKinds.Exists(x => x.index == index))
+                                {
+                                    var selectedDefined = GlobalVariables.definedKinds.FirstOrDefault(x => x.index == index);
+                                    GlobalVariables.promptArray.Add(index.ToString());
+                                    GlobalVariables.promptArray.Add(selectedDefined.name);
+                                    WriteOutput.WriteInformationLine($"Selected {selectedDefined.name} : {selectedDefined.comment}");
+                                }
+                                else
+                                {
+                                    WriteOutput.WriteErrorLine("Definition does not exist");
+                                }
                             }
                             else
                             {
-                                WriteErrorLine("No definitions, please create one");
+                                WriteOutput.WriteErrorLine("Value not an integer");
                             }
-                        }
-                        break;
-                    case "?":
-                        GetAvailableOptions("").ToList().ForEach(x => WriteInformationLine($"> {x}"));
-                        break;
-                    case "desc":
-                    case "description":
-                        var _object = FindNestedObject();
-                        if (!string.IsNullOrEmpty(_object.type))
-                        {
-                            WriteInformationLine($"> [{FindNestedObject().type}] {FindNestedObject().description}");
-                        }
-                        else
-                        {
-                            WriteInformationLine($"> {FindNestedObject().description}");
-                        }
-                        break;
-                    case "exit":
-                    case "..":
-                        if (promptArray.Count() == 1)
-                        {
-                            System.Environment.Exit(0);
-                        }
-                        promptArray.RemoveAt(promptArray.Count() - 1);
-                        break;
-                    default:
-                        if (!string.IsNullOrEmpty(input))
-                        {
-                            if (GetAvailableOptions("").Exists(x => x == input))
+                            break;
+                        default:
+                            DefinedGroupType _definedObject = FindCurrentDefinedObject();
+                            GlobalVariables.promptArray.Remove(GlobalVariables.promptArray.Last());
+                            switch (_definedObject.type)
                             {
-                                promptArray.Add(input);
+                                case "integer":
+                                    Int32 _tempValue;
+                                    if (Int32.TryParse(input, out _tempValue))
+                                    {
+                                        _definedObject.value = _tempValue.ToString();
+                                    }
+                                    else
+                                    {
+                                        WriteOutput.WriteErrorLine("value entered is not a int32 value");
+                                    }
+                                    break;
+                                case "string":
+                                    _definedObject.value = input;
+                                    break;
+
+                            }
+                            break;
+                    }
+                    GlobalVariables.valuePromptMode = false;
+                    continue;
+                }
+                else
+                {
+                    switch (input)
+                    {
+                        case "print":
+                        case "p":
+                            var outputObj = new ConstructOutputYAML();
+                            outputObj.Build();
+                            outputObj.PrintYAML();
+                            break;
+                        case "new":
+
+                            if (GlobalVariables.promptArray.Count == 1)
+                            {
+                                WriteOutput.WriteInformationLine("Creating new definition");
+                                initPrompt();
+                                if (GlobalVariables.definedKinds.Count == 0)
+                                {
+                                    GlobalVariables.definedKinds.Add(new DefinedGroupType() { rootObject = true, index = 1 });
+                                }
+                                else
+                                {
+                                    GlobalVariables.definedKinds.Add(new DefinedGroupType() { rootObject = true, index = GlobalVariables.definedKinds.Last().index + 1 });
+                                }
+                                GlobalVariables.promptArray.Add(GlobalVariables.definedKinds.OrderBy(x => x.index).Last().index.ToString());
+                            }
+                            else if (FindCurrentDefinedObject().type == "array")
+                            {
+                                var currentObject = FindCurrentDefinedObject();
+                                if (currentObject.properties.Count == 0)
+                                {
+                                    currentObject.properties.Add(new DefinedGroupType() { index = 1 });
+                                }
+                                else
+                                {
+                                    currentObject.properties.Add(new DefinedGroupType() { index = currentObject.properties.Last().index + 1 });
+                                }
+                                GlobalVariables.promptArray.Add(currentObject.properties.OrderBy(x => x.index).Last().index.ToString());
+                            }
+                            break;
+                        case "select":
+                            GlobalVariables.valuePromptMode = true;
+                            GlobalVariables.promptArray.Add("select");
+                            break;
+                        case "list":
+                            if (GlobalVariables.promptArray.Count() == 1)
+                            {
+                                if (GlobalVariables.definedKinds.Count > 0)
+                                {
+                                    WriteOutput.WriteInformationLine("Current definitions");
+                                    GlobalVariables.definedKinds.ForEach(kind =>
+                                    {
+                                        WriteOutput.WriteInformationLine($"> [{kind.index}] {kind.name} : {kind.comment}");
+                                    });
+                                }
+                                else
+                                {
+                                    WriteOutput.WriteErrorLine("No definitions, please create one");
+                                }
+                            }
+                            else if (FindCurrentDefinedObject().type == "array")
+                            {
+                                if (FindCurrentDefinedObject().properties.Count > 0)
+                                {
+                                    FindCurrentDefinedObject().properties.ForEach(prop => WriteOutput.WriteInformationLine($"[{prop.index}] {prop.name}"));
+                                }
+                                else
+                                {
+                                    WriteOutput.WriteErrorLine("No objects defined");
+                                }
                             }
                             else
                             {
-                                WriteErrorLine($"> {input} not found");
+                                WriteOutput.WriteErrorLine($"> {input} not found");
                             }
-                        }
-                        break;
+                            break;
+                        case "?":
+                            var _currentObject = FindNestedObject();
+                            if (_currentObject.type == "array" && _currentObject.format == "object")
+                            {
+                                GlobalVariables.knownCommands.ForEach(x => WriteOutput.WriteInformationLine($"> {x}"));
+                            }
+                            else
+                            {
+                                GetAvailableOptions("").ToList().ForEach(x => WriteOutput.WriteInformationLine($"> {x}"));
+                            }
+                            break;
+                        case "desc":
+                        case "description":
+                            var _object = FindNestedObject();
+                            if (!string.IsNullOrEmpty(_object.type))
+                            {
+                                WriteOutput.WriteInformationLine($"> [{FindNestedObject().type}] {FindNestedObject().description}");
+                            }
+                            else
+                            {
+                                WriteOutput.WriteInformationLine($"> {FindNestedObject().description}");
+                            }
+                            break;
+                        case "comment":
+                            GlobalVariables.valuePromptMode = true;
+                            GlobalVariables.promptArray.Add("comment");
+                            break;
+                        case "exit":
+                        case "..":
+                            if (GlobalVariables.promptArray.Count() == 1)
+                            {
+                                System.Environment.Exit(0);
+                            }
+                            GlobalVariables.promptArray.RemoveAt(GlobalVariables.promptArray.Count() - 1);
+                            break;
+                        default:
+                            if (!string.IsNullOrEmpty(input))
+                            {
+                                if (GetAvailableOptions("", true).Exists(x => x == input))
+                                {
+                                    GlobalVariables.promptArray.Add(input);
+                                    DefinedGroupType currentDefinedGroup = FindCurrentDefinedObject();
+                                    //currentDefinedGroup.name = input;
+                                    List<string> inputTypes = new List<string>() { "string", "integer" };
+                                    if (inputTypes.Exists(x => x == currentDefinedGroup.type))
+                                    {
+                                        GlobalVariables.valuePromptMode = true;
+                                    }
+                                    if (GlobalVariables.promptArray.Count() == 3)
+                                    {
+                                        GroupType currentGroup = GlobalVariables.groupKinds.Find(x => x.name == input);
+                                        currentDefinedGroup.kubedetails = new KubeObjectType() { group = currentGroup.kubedetails.FirstOrDefault().group, kind = currentGroup.kubedetails.FirstOrDefault().kind, version = currentGroup.kubedetails.FirstOrDefault().version };
+                                    }
+                                }
+                                else
+                                {
+                                    WriteOutput.WriteErrorLine($"> {input} not found");
+                                }
+                            }
+                            break;
+                    }
                 }
             }
         }
+
         static public GroupType BuildRootObject(JToken _json)
         {
             GroupType _prop = new GroupType();
             _prop.name = ((JProperty)_json.Parent).Name.Split(".").Last();
             _prop.description = _json.SelectToken("description")?.Value<string>();
             _prop.kubedetails = new List<KubeObjectType>();
+            _prop.rootObject = true;
             _json.SelectToken("x-kubernetes-group-version-kind").Children().ForEach(x =>
             {
                 _prop.kubedetails.Add(new KubeObjectType()
@@ -128,7 +258,7 @@ namespace k8config
             });
             _json["properties"].ForEach(_property =>
             {
-                if (!ignoreProperties.Any(x => x == ((JProperty)_property).Name))
+                if (!GlobalVariables.ignoreProperties.Any(x => x == ((JProperty)_property).Name))
                 {
                     if (_property.SelectToken("$..$ref") != null)
                     {
@@ -137,7 +267,7 @@ namespace k8config
                         {
                             name = ((JProperty)_property).Name,
                             description = _property.SelectToken("$..description")?.Value<string>(),
-                            properties = BuildPropTree(availbleDefinitions["definitions"][(_property.SelectToken("$..$ref")?.Value<string>()).Split("/").Last()])
+                            properties = BuildPropTree(GlobalVariables.availbleDefinitions["definitions"][(_property.SelectToken("$..$ref")?.Value<string>()).Split("/").Last()])
                         });
                     }
                 }
@@ -152,64 +282,45 @@ namespace k8config
             string description = _json["description"]?.Value<string>();
             _json.SelectTokens("$..properties").Children().ToList().ForEach(node =>
             {
-                if (!ignoreProperties.Any(x => x == ((JProperty)node).Name))
+                if (!GlobalVariables.ignoreProperties.Any(x => x == ((JProperty)node).Name))
                 {
                     GroupType _prop = new GroupType();
                     _prop.name = ((JProperty)node).Name;
+                    Console.Write($"{_prop.name}:");
                     if (required != null) { _prop.required = (bool)required?.Any(x => x == ((JProperty)node).Name); }
                     _prop.description = (string)(node.First["description"]);
                     _proptree.Add(_prop);
                     var _ref = node.First["$ref"];
                     if (node.First["$ref"] == null)
                     {
-                        _prop.format = (string)(node.First["format"]);
+                        _prop.format = String.IsNullOrEmpty((string)(node.First["format"])) ? "object" : (string)(node.First["format"]);
                         _prop.type = (string)(node.First["type"]);
+                        if (_prop.type == "array")
+                        {
+                            if (node.First["items"]["type"] != null)
+                            {
+                                _prop.properties.Add(new GroupType() { type = node.First["items"]["type"].Value<string>() });
+                            }
+                            else if (node.First["items"]["$ref"] != null)
+                            {
+                                _prop.properties = BuildPropTree(GlobalVariables.availbleDefinitions["definitions"][node.First["items"]["$ref"]?.Value<string>().Split("/").Last()]);
+                            }
+                        }
                     }
                     else
                     {
-                        _prop.properties = BuildPropTree(availbleDefinitions["definitions"][node.First["$ref"]?.Value<string>().Split("/").Last()]);
+                        _prop.properties = BuildPropTree(GlobalVariables.availbleDefinitions["definitions"][node.First["$ref"]?.Value<string>().Split("/").Last()]);
                     }
+
                 }
+
             });
+            Console.Write($"\n");
             return _proptree;
         }
 
-        public class GroupType
-        {
-            public GroupType()
-            {
-                properties = new List<GroupType>();
-            }
-            public bool required { get; set; }
-            public List<KubeObjectType> kubedetails { get; set; }
-            public string name { get; set; }
-            public string reference { get; set; }
-            public string fullpath { get; set; }
-            public string description { get; set; }
-            public string format { get; set; }
-            public string type { get; set; }
-            public List<GroupType> properties { get; set; }
-        }
-        public class KubeObjectType
-        {
-            public string group { get; set; }
-            public string kind { get; set; }
-            public string version { get; set; }
-        }
-        public class GroupProperty
-        {
-            public GroupProperty()
-            {
-                required = false;
-            }
-            public string property { get; set; }
-            public string reference { get; set; }
-            public bool required { get; set; }
-            public string description { get; set; }
-            public string format { get; set; }
-            public string type { get; set; }
-            public List<GroupProperty> properties { get; set; }
-        }
+
+
 
         class AutoCompletionHandler : IAutoCompleteHandler
         {
@@ -220,54 +331,94 @@ namespace k8config
             // index - The index of the terminal cursor within {text}
             public string[] GetSuggestions(string text, int index)
             {
-
-                return GetAvailableOptions(text).ToArray();
+                if (GlobalVariables.promptArray.Count > 3)
+                {
+                    if (FindNestedObject().type == "array" && FindNestedObject().format == "object")
+                    {
+                        return GlobalVariables.knownCommands.ToArray();
+                    }
+                }
+                var templist = GetAvailableOptions("");
+                templist.AddRange(GlobalVariables.knownCommands);
+                return templist.Where(x => x.Contains(text)).ToArray();
             }
         }
-        static public List<string> GetAvailableOptions(string text)
+        protected static void CtlrCHandler(object sender, ConsoleCancelEventArgs args)
         {
-            List<string> options;
-            if (promptArray.Count() == 1)
+            initPrompt();
+            args.Cancel = true;
+        }
+        static public List<string> GetAvailableOptions(string text, bool includeCommands = false)
+        {
+            GroupType currentObject = FindNestedObject();
+            List<string> options = List<string>();
+            if (GlobalVariables.promptArray.Count() == 2)
             {
-                options = groupKinds.Select(x => x.name).Where(x => x.Contains(text)).ToList();
+                options = GlobalVariables.groupKinds.Select(x => x.name).Where(x => x.Contains(text)).ToList();
+            }
+            else if (currentObject.format == "object" && currentObject.type == "Array")
+            {
+
             }
             else
             {
                 options = FindNestedObject().properties.Select(x => x.name).Where(x => x.Contains(text)).ToList();
             }
+            if (includeCommands == true) { options.AddRange(GlobalVariables.knownCommands); }
             return options;
         }
         static public GroupType FindNestedObject()
         {
             GroupType tempGroupType = new GroupType() { description = "You must select one root object" };
-            if (promptArray.Count() > 1)
+            if (GlobalVariables.promptArray.Count() > 2)
             {
-                tempGroupType = groupKinds.FirstOrDefault(x => x.name == promptArray[1]);
-                if (promptArray.Count() > 2)
+                tempGroupType = GlobalVariables.groupKinds.FirstOrDefault(x => x.name == GlobalVariables.promptArray[2]);
+                if (GlobalVariables.promptArray.Count() > 3)
                 {
-                    for (int index = 2; index < (promptArray.Count()); index++)
+                    for (int index = 3; index < (GlobalVariables.promptArray.Count()); index++)
                     {
-                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == promptArray[index]);
+                        //if we find a array identifier, just to the next value in prompt array
+                        if (int.TryParse(GlobalVariables.promptArray[index], out _))
+                        {
+                            continue;
+                        }
+                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
                     }
                 }
             }
             return tempGroupType;
         }
-        static public void WriteNormalLine(string _line)
+        static public DefinedGroupType FindCurrentDefinedObject()
         {
-            Console.WriteLine(_line);
+            var tempGroupType = GlobalVariables.definedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
+            if (GlobalVariables.promptArray.Count() > 2)
+            {
+                for (int index = 3; index < (GlobalVariables.promptArray.Count()); index++)
+                {
+                    if (!tempGroupType.properties.Exists(x => x.name == GlobalVariables.promptArray[index]))
+                    {
+                        var nestedObject = FindNestedObject();
+                        tempGroupType.properties.Add(new DefinedGroupType()
+                        {
+                            name = nestedObject.name,
+                            required = nestedObject.required,
+                            format = nestedObject.format,
+                            type = nestedObject.type
+                        });
+                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
+                    }
+                    else
+                    {
+                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
+                    }
+                }
+            }
+            return tempGroupType;
         }
-        static public void WriteInformationLine(string _line)
+
+        static void initPrompt()
         {
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine(_line);
-            Console.ResetColor();
-        }
-        static public void WriteErrorLine(string _line)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(_line);
-            Console.ResetColor();
+            GlobalVariables.promptArray = new List<string>() { "K8" };
         }
     }
     public static class BooleanExtensions
