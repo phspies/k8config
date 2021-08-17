@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace k8config.DataModels
 {
-    public class DefinedGroupType
+    public class TargetGroupType
     {
-        public DefinedGroupType()
+        public TargetGroupType()
         {
-            properties = new List<DefinedGroupType>();
+            properties = new List<TargetGroupType>();
         }
         public int index { get; set; }
         public bool rootObject { get; set; }
@@ -20,7 +20,8 @@ namespace k8config.DataModels
         public string name { get; set; }
         public string value { get; set; }
         public string format { get; set; }
+        public bool isItem { get; set; }
         public string type { get; set; }
-        public List<DefinedGroupType> properties { get; set; }
+        public List<TargetGroupType> properties { get; set; }
     }
 }

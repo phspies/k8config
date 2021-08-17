@@ -2,11 +2,11 @@
 
 namespace k8config.DataModels
 {
-    public class GroupType
+    public class SourceGroupType
     {
-        public GroupType()
+        public SourceGroupType()
         {
-            properties = new List<GroupType>();
+            properties = new List<SourceGroupType>();
         }
         public bool rootObject { get; set; }
         public bool required { get; set; }
@@ -17,6 +17,6 @@ namespace k8config.DataModels
         public string description { get; set; }
         public string format { get; set; }
         public string type { get; set; }
-        public List<GroupType> properties { get; set; }
+        public List<SourceGroupType> properties { get; set; }
     }
 }

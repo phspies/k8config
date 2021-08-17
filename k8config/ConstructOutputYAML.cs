@@ -7,7 +7,7 @@ namespace k8config
     class ConstructOutputYAML
     {
         List<string> _list = new List<string>();
-        public List<string> Build(DefinedGroupType _object = null, int indent = 0)
+        public List<string> Build(TargetGroupType _object = null, int indent = 0)
         {
             if (_object == null)
             {
@@ -16,7 +16,7 @@ namespace k8config
                     if (!String.IsNullOrEmpty(kind.comment)) { _list.Add($"#{kind.comment}"); }
                     _list.Add($"apiVersion: {kind.kubedetails.group}/{kind.kubedetails.version}");
                     _list.Add($"kind: {kind.kubedetails.kind}");
-                    List<DefinedGroupType> _objectProperties = kind.properties;
+                    List<TargetGroupType> _objectProperties = kind.properties;
                     _list.AddRange(new ConstructOutputYAML().Build(kind, indent + 2));
                 });
             }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using k8config.DataModels;
-using MoreLinq;
+﻿using k8config.DataModels;
 using Newtonsoft.Json.Linq;
 
 namespace k8config
@@ -73,7 +68,7 @@ namespace k8config
                             }
                             break;
                         default:
-                            DefinedGroupType _definedObject = FindCurrentDefinedObject();
+                            TargetGroupType _definedObject = FindCurrentDefinedObject();
                             GlobalVariables.promptArray.Remove(GlobalVariables.promptArray.Last());
                             switch (_definedObject.type)
                             {
@@ -109,18 +104,17 @@ namespace k8config
                             outputObj.PrintYAML();
                             break;
                         case "new":
-
                             if (GlobalVariables.promptArray.Count == 1)
                             {
                                 WriteOutput.WriteInformationLine("Creating new definition");
                                 initPrompt();
                                 if (GlobalVariables.definedKinds.Count == 0)
                                 {
-                                    GlobalVariables.definedKinds.Add(new DefinedGroupType() { rootObject = true, index = 1 });
+                                    GlobalVariables.definedKinds.Add(new TargetGroupType() { rootObject = true, index = 0 });
                                 }
                                 else
                                 {
-                                    GlobalVariables.definedKinds.Add(new DefinedGroupType() { rootObject = true, index = GlobalVariables.definedKinds.Last().index + 1 });
+                                    GlobalVariables.definedKinds.Add(new TargetGroupType() { rootObject = true, index = GlobalVariables.definedKinds.Last().index + 1 });
                                 }
                                 GlobalVariables.promptArray.Add(GlobalVariables.definedKinds.OrderBy(x => x.index).Last().index.ToString());
                             }
@@ -129,11 +123,11 @@ namespace k8config
                                 var currentObject = FindCurrentDefinedObject();
                                 if (currentObject.properties.Count == 0)
                                 {
-                                    currentObject.properties.Add(new DefinedGroupType() { index = 1 });
+                                    currentObject.properties.Add(new TargetGroupType() { index = 0, isItem = true });
                                 }
                                 else
                                 {
-                                    currentObject.properties.Add(new DefinedGroupType() { index = currentObject.properties.Last().index + 1 });
+                                    currentObject.properties.Add(new TargetGroupType() { index = currentObject.properties.Last().index + 1, isItem = true });
                                 }
                                 GlobalVariables.promptArray.Add(currentObject.properties.OrderBy(x => x.index).Last().index.ToString());
                             }
@@ -160,9 +154,10 @@ namespace k8config
                             }
                             else if (FindCurrentDefinedObject().type == "array")
                             {
-                                if (FindCurrentDefinedObject().properties.Count > 0)
+                                var _tempObject = FindCurrentDefinedObject();
+                                if (_tempObject.properties.Count > 0)
                                 {
-                                    FindCurrentDefinedObject().properties.ForEach(prop => WriteOutput.WriteInformationLine($"[{prop.index}] {prop.name}"));
+                                    _tempObject.properties.ForEach(prop => WriteOutput.WriteInformationLine($"[{prop.index}] {prop.name}"));
                                 }
                                 else
                                 {
@@ -176,7 +171,7 @@ namespace k8config
                             break;
                         case "?":
                             var _currentObject = FindNestedObject();
-                            if (_currentObject.type == "array" && _currentObject.format == "object")
+                            if (_currentObject.type == "array" && !int.TryParse(GlobalVariables.promptArray.Last(), out _))
                             {
                                 GlobalVariables.knownCommands.ForEach(x => WriteOutput.WriteInformationLine($"> {x}"));
                             }
@@ -215,7 +210,7 @@ namespace k8config
                                 if (GetAvailableOptions("", true).Exists(x => x == input))
                                 {
                                     GlobalVariables.promptArray.Add(input);
-                                    DefinedGroupType currentDefinedGroup = FindCurrentDefinedObject();
+                                    TargetGroupType currentDefinedGroup = FindCurrentDefinedObject();
                                     //currentDefinedGroup.name = input;
                                     List<string> inputTypes = new List<string>() { "string", "integer" };
                                     if (inputTypes.Exists(x => x == currentDefinedGroup.type))
@@ -224,7 +219,7 @@ namespace k8config
                                     }
                                     if (GlobalVariables.promptArray.Count() == 3)
                                     {
-                                        GroupType currentGroup = GlobalVariables.groupKinds.Find(x => x.name == input);
+                                        SourceGroupType currentGroup = GlobalVariables.groupKinds.Find(x => x.name == input);
                                         currentDefinedGroup.kubedetails = new KubeObjectType() { group = currentGroup.kubedetails.FirstOrDefault().group, kind = currentGroup.kubedetails.FirstOrDefault().kind, version = currentGroup.kubedetails.FirstOrDefault().version };
                                     }
                                 }
@@ -239,14 +234,14 @@ namespace k8config
             }
         }
 
-        static public GroupType BuildRootObject(JToken _json)
+        static public SourceGroupType BuildRootObject(JToken _json)
         {
-            GroupType _prop = new GroupType();
+            SourceGroupType _prop = new SourceGroupType();
             _prop.name = ((JProperty)_json.Parent).Name.Split(".").Last();
             _prop.description = _json.SelectToken("description")?.Value<string>();
             _prop.kubedetails = new List<KubeObjectType>();
             _prop.rootObject = true;
-            _json.SelectToken("x-kubernetes-group-version-kind").Children().ForEach(x =>
+            _json.SelectToken("x-kubernetes-group-version-kind").Children().ToList().ForEach(x =>
             {
                 _prop.kubedetails.Add(new KubeObjectType()
                 {
@@ -256,14 +251,14 @@ namespace k8config
                 });
 
             });
-            _json["properties"].ForEach(_property =>
+            _json["properties"].ToList().ForEach(_property =>
             {
                 if (!GlobalVariables.ignoreProperties.Any(x => x == ((JProperty)_property).Name))
                 {
                     if (_property.SelectToken("$..$ref") != null)
                     {
                         var objectref = _property.SelectToken("$..$ref")?.Value<string>();
-                        _prop.properties.Add(new GroupType()
+                        _prop.properties.Add(new SourceGroupType()
                         {
                             name = ((JProperty)_property).Name,
                             description = _property.SelectToken("$..description")?.Value<string>(),
@@ -275,18 +270,17 @@ namespace k8config
             return _prop;
         }
 
-        static public List<GroupType> BuildPropTree(JToken _json)
+        static public List<SourceGroupType> BuildPropTree(JToken _json)
         {
-            List<GroupType> _proptree = new List<GroupType>();
+            List<SourceGroupType> _proptree = new List<SourceGroupType>();
             List<string> required = _json["required"]?.ToObject<string[]>().ToList();
             string description = _json["description"]?.Value<string>();
             _json.SelectTokens("$..properties").Children().ToList().ForEach(node =>
             {
                 if (!GlobalVariables.ignoreProperties.Any(x => x == ((JProperty)node).Name))
                 {
-                    GroupType _prop = new GroupType();
+                    SourceGroupType _prop = new SourceGroupType();
                     _prop.name = ((JProperty)node).Name;
-                    Console.Write($"{_prop.name}:");
                     if (required != null) { _prop.required = (bool)required?.Any(x => x == ((JProperty)node).Name); }
                     _prop.description = (string)(node.First["description"]);
                     _proptree.Add(_prop);
@@ -299,7 +293,7 @@ namespace k8config
                         {
                             if (node.First["items"]["type"] != null)
                             {
-                                _prop.properties.Add(new GroupType() { type = node.First["items"]["type"].Value<string>() });
+                                _prop.properties.Add(new SourceGroupType() { type = node.First["items"]["type"].Value<string>() });
                             }
                             else if (node.First["items"]["$ref"] != null)
                             {
@@ -315,7 +309,6 @@ namespace k8config
                 }
 
             });
-            Console.Write($"\n");
             return _proptree;
         }
 
@@ -331,15 +324,27 @@ namespace k8config
             // index - The index of the terminal cursor within {text}
             public string[] GetSuggestions(string text, int index)
             {
-                if (GlobalVariables.promptArray.Count > 3)
+                List<string> templist = GlobalVariables.knownCommands;
+                var _currentObject = FindNestedObject();
+                if (_currentObject.type == "array" && !int.TryParse(GlobalVariables.promptArray.Last(), out _))
                 {
-                    if (FindNestedObject().type == "array" && FindNestedObject().format == "object")
-                    {
-                        return GlobalVariables.knownCommands.ToArray();
-                    }
+                    templist.AddRange(GlobalVariables.knownCommands);
                 }
-                var templist = GetAvailableOptions("");
-                templist.AddRange(GlobalVariables.knownCommands);
+                else
+                {
+                    templist.AddRange(GetAvailableOptions("").ToList());
+                }
+
+
+                //if (GlobalVariables.promptArray.Count > 3)
+                //{
+                //    if (FindNestedObject().type == "array" && FindNestedObject().format == "object")
+                //    {
+                //        return GlobalVariables.knownCommands.ToArray();
+                //    }
+                //}
+                //var templist = GetAvailableOptions("");
+                //templist.AddRange(GlobalVariables.knownCommands);
                 return templist.Where(x => x.Contains(text)).ToArray();
             }
         }
@@ -350,8 +355,8 @@ namespace k8config
         }
         static public List<string> GetAvailableOptions(string text, bool includeCommands = false)
         {
-            GroupType currentObject = FindNestedObject();
-            List<string> options = List<string>();
+            SourceGroupType currentObject = FindNestedObject();
+            List<string> options = new List<string>();
             if (GlobalVariables.promptArray.Count() == 2)
             {
                 options = GlobalVariables.groupKinds.Select(x => x.name).Where(x => x.Contains(text)).ToList();
@@ -367,9 +372,9 @@ namespace k8config
             if (includeCommands == true) { options.AddRange(GlobalVariables.knownCommands); }
             return options;
         }
-        static public GroupType FindNestedObject()
+        static public SourceGroupType FindNestedObject()
         {
-            GroupType tempGroupType = new GroupType() { description = "You must select one root object" };
+            SourceGroupType tempGroupType = new SourceGroupType() { description = "You must select one root object" };
             if (GlobalVariables.promptArray.Count() > 2)
             {
                 tempGroupType = GlobalVariables.groupKinds.FirstOrDefault(x => x.name == GlobalVariables.promptArray[2]);
@@ -388,27 +393,42 @@ namespace k8config
             }
             return tempGroupType;
         }
-        static public DefinedGroupType FindCurrentDefinedObject()
+        static public TargetGroupType FindCurrentDefinedObject()
         {
             var tempGroupType = GlobalVariables.definedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
             if (GlobalVariables.promptArray.Count() > 2)
             {
                 for (int index = 3; index < (GlobalVariables.promptArray.Count()); index++)
                 {
-                    if (!tempGroupType.properties.Exists(x => x.name == GlobalVariables.promptArray[index]))
+                    //skip index if value is a index number
+                    int indexNumber = 0;
+                    if (int.TryParse(GlobalVariables.promptArray[index], out indexNumber))
                     {
-                        var nestedObject = FindNestedObject();
-                        tempGroupType.properties.Add(new DefinedGroupType()
+                        if (!tempGroupType.properties.Exists(x => x.index == indexNumber))
                         {
-                            name = nestedObject.name,
-                            required = nestedObject.required,
-                            format = nestedObject.format,
-                            type = nestedObject.type
-                        });
-                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
+                            var nestedObject = FindNestedObject();
+                            tempGroupType.properties.Add(new TargetGroupType()
+                            {
+                                required = nestedObject.required,
+                                format = nestedObject.format,
+                                type = nestedObject.type
+                            });
+                        }
+                        tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.index == indexNumber);
                     }
                     else
                     {
+                        if (!tempGroupType.properties.Exists(x => x.name == GlobalVariables.promptArray[index]))
+                        {
+                            var nestedObject = FindNestedObject();
+                            tempGroupType.properties.Add(new TargetGroupType()
+                            {
+                                name = nestedObject.name,
+                                required = nestedObject.required,
+                                format = nestedObject.format,
+                                type = nestedObject.type
+                            });
+                        }
                         tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
                     }
                 }
