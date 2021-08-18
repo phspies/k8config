@@ -5,8 +5,6 @@ namespace k8config
 {
     class Program
     {
-
-
         static void Main(string[] args)
         {
             Console.CancelKeyPress += new ConsoleCancelEventHandler(CtlrCHandler);
@@ -16,21 +14,13 @@ namespace k8config
 
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler();
 
-            GlobalVariables.availbleDefinitions.SelectTokens("$..x-kubernetes-group-version-kind").ToList().ForEach(x =>
+            GlobalVariables.availbleDefinitions["definitions"].SelectTokens("$..x-kubernetes-group-version-kind").ToList().ForEach(x =>
             {
-                if (String.IsNullOrEmpty(x.SelectToken(".group")?.Value<string>()) &&
-                    String.IsNullOrEmpty(x.SelectToken(".kind")?.Value<string>()) &&
-                    String.IsNullOrEmpty(x.SelectToken(".version")?.Value<string>()))
+                if ((x.First["group"] != null) && (x.First["kind"] != null) && (x.First["version"] != null) && (!((JProperty)(x.Parent.Parent.Parent)).Name.Contains(".apis.apiextensions")))
                 {
-                    JContainer rootobject = x.Parent.Parent;
-                    if (((JProperty)rootobject.Parent).Name.Contains("Deployment"))
-                    {
-                        GlobalVariables.groupKinds.Add(BuildRootObject(rootobject));
-                    }
+                    GlobalVariables.groupKinds.Add(BuildRootObject(x.Parent.Parent));
                 }
             });
-
-
             WriteOutput.WriteInformationLine($"{GlobalVariables.groupKinds.DistinctBy(x => x.name).Count()} Definitions found \n");
 
 
@@ -50,16 +40,32 @@ namespace k8config
                             int index;
                             if (int.TryParse(input, out index))
                             {
-                                if (GlobalVariables.definedKinds.Exists(x => x.index == index))
+                                if (GlobalVariables.promptArray.Count == 1)
                                 {
-                                    var selectedDefined = GlobalVariables.definedKinds.FirstOrDefault(x => x.index == index);
-                                    GlobalVariables.promptArray.Add(index.ToString());
-                                    GlobalVariables.promptArray.Add(selectedDefined.name);
-                                    WriteOutput.WriteInformationLine($"Selected {selectedDefined.name} : {selectedDefined.comment}");
+                                    if (GlobalVariables.definedKinds.Exists(x => x.index == index))
+                                    {
+                                        var selectedDefined = GlobalVariables.definedKinds.FirstOrDefault(x => x.index == index);
+                                        GlobalVariables.promptArray.Add(index.ToString());
+                                        WriteOutput.WriteInformationLine($"Selected [{selectedDefined.index}] {selectedDefined.comment}");
+                                    }
+                                    else
+                                    {
+                                        WriteOutput.WriteErrorLine("Definition does not exist");
+                                    }
                                 }
-                                else
+                                else if (FindCurrentDefinedObject().type == "array")
                                 {
-                                    WriteOutput.WriteErrorLine("Definition does not exist");
+                                    var _tempObject = FindCurrentDefinedObject();
+                                    if (_tempObject.properties.Count > 0)
+                                    {
+                                        var selectedDefined = _tempObject.properties.FirstOrDefault(x => x.index == index);
+                                        GlobalVariables.promptArray.Add(index.ToString());
+                                        WriteOutput.WriteInformationLine($"Selected [{selectedDefined.index}] {selectedDefined.comment}");
+                                    }
+                                    else
+                                    {
+                                        WriteOutput.WriteErrorLine("No objects defined");
+                                    }
                                 }
                             }
                             else
@@ -157,7 +163,19 @@ namespace k8config
                                 var _tempObject = FindCurrentDefinedObject();
                                 if (_tempObject.properties.Count > 0)
                                 {
-                                    _tempObject.properties.ForEach(prop => WriteOutput.WriteInformationLine($"[{prop.index}] {prop.name}"));
+                                    string _lineprop = "";
+                                    _tempObject.properties.ForEach(prop =>
+                                    {
+                                        if (prop.properties.Exists(x => !string.IsNullOrEmpty(x.name)))
+                                        {
+                                            _lineprop = prop.properties.FirstOrDefault(x => !string.IsNullOrEmpty(x.name)).value;
+                                        }
+                                        if (!string.IsNullOrEmpty(prop.comment))
+                                        {
+                                            _lineprop = string.Format($"{_lineprop} : {prop.comment}");
+                                        }
+                                        WriteOutput.WriteInformationLine($"[{prop.index}] {_lineprop}");
+                                    });
                                 }
                                 else
                                 {
@@ -324,27 +342,12 @@ namespace k8config
             // index - The index of the terminal cursor within {text}
             public string[] GetSuggestions(string text, int index)
             {
-                List<string> templist = GlobalVariables.knownCommands;
+                List<string> templist = new List<string>(GlobalVariables.knownCommands);
                 var _currentObject = FindNestedObject();
-                if (_currentObject.type == "array" && !int.TryParse(GlobalVariables.promptArray.Last(), out _))
-                {
-                    templist.AddRange(GlobalVariables.knownCommands);
-                }
-                else
+                if (_currentObject.type != "array" && int.TryParse(GlobalVariables.promptArray.Last(), out _))
                 {
                     templist.AddRange(GetAvailableOptions("").ToList());
                 }
-
-
-                //if (GlobalVariables.promptArray.Count > 3)
-                //{
-                //    if (FindNestedObject().type == "array" && FindNestedObject().format == "object")
-                //    {
-                //        return GlobalVariables.knownCommands.ToArray();
-                //    }
-                //}
-                //var templist = GetAvailableOptions("");
-                //templist.AddRange(GlobalVariables.knownCommands);
                 return templist.Where(x => x.Contains(text)).ToArray();
             }
         }
@@ -390,6 +393,10 @@ namespace k8config
                         tempGroupType = tempGroupType.properties.FirstOrDefault(x => x.name == GlobalVariables.promptArray[index]);
                     }
                 }
+            }
+            if (tempGroupType == null)
+            {
+                throw new Exception("This object cannot be empty");
             }
             return tempGroupType;
         }

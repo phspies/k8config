@@ -7,7 +7,7 @@ namespace k8config
     class ConstructOutputYAML
     {
         List<string> _list = new List<string>();
-        public List<string> Build(TargetGroupType _object = null, int indent = 0)
+        public List<string> Build(TargetGroupType _object = null, int indent = 0, bool tagfirst = false)
         {
             if (_object == null)
             {
@@ -22,23 +22,39 @@ namespace k8config
             }
             else
             {
-                _object.properties.ForEach(property =>
+                foreach (var property in _object.properties)
                 {
-                    if (!String.IsNullOrEmpty(property.comment)) { _list.Add($"#{property.comment}".PadLeft(indent)); }
-                    if (!string.IsNullOrEmpty(property.type))
+                    if (property.isItem)
                     {
-                        _list.Add(padLeftString($"{property.name}: {property.value}", indent));
+                        if (!String.IsNullOrEmpty(property.comment)) { _list.Add(padLeftString($"#{property.comment}", indent)); }
+                        _list.AddRange(new ConstructOutputYAML().Build(property, indent, true));
                     }
                     else
                     {
-                        _list.Add(padLeftString($"{property.name}:", indent));
+                        if (!String.IsNullOrEmpty(property.comment)) { _list.Add(padLeftString($"#{property.comment}", indent)); }
+                        if (!string.IsNullOrEmpty(property.type))
+                        {
+                            if (tagfirst)
+                            {
+                                _list.Add(padLeftString($"- {property.name}: {property.value}", indent - 2));
+                                tagfirst = false;
+                            }
+                            else
+                            {
+                                _list.Add(padLeftString($"{property.name}: {property.value}", indent));
+                            }
+                        }
+                        else
+                        {
+                            _list.Add(padLeftString($"{property.name}:", indent));
+                        }
+                        if (property.properties.Count > 0)
+                        {
+
+                            _list.AddRange(new ConstructOutputYAML().Build(property, indent + 2));
+                        }
                     }
-                    if (property.properties.Count > 0)
-                    {
-                        _list.AddRange(new ConstructOutputYAML().Build(property, indent + 2));
-                    }
-                });
-                
+                };
             }
             return _list;
 
