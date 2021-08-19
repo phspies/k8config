@@ -11,20 +11,23 @@ namespace k8config
         {
             if (_object == null)
             {
-                GlobalVariables.definedKinds.ForEach(kind =>
+                GlobalVariables.groupTargetKinds.ForEach(kind =>
                 {
-                    if (!String.IsNullOrEmpty(kind.comment)) { _list.Add($"#{kind.comment}"); }
-                    _list.Add($"apiVersion: {kind.kubedetails.group}/{kind.kubedetails.version}");
-                    _list.Add($"kind: {kind.kubedetails.kind}");
-                    List<TargetGroupType> _objectProperties = kind.properties;
-                    _list.AddRange(new ConstructOutputYAML().Build(kind, indent + 2));
+                    if (kind.kubedetails != null)
+                    {
+                        if (!String.IsNullOrEmpty(kind.comment)) { _list.Add($"#{kind.comment}"); }
+                        _list.Add($"apiVersion: {kind.kubedetails.group}/{kind.kubedetails.version}");
+                        _list.Add($"kind: {kind.kubedetails.kind}");
+                        List<TargetGroupType> _objectProperties = kind.properties;
+                        _list.AddRange(new ConstructOutputYAML().Build(kind, indent + 2));
+                    }
                 });
             }
             else
             {
                 foreach (var property in _object.properties)
                 {
-                    if (property.isItem)
+                    if (property.format == FieldFormat.Item)
                     {
                         if (!String.IsNullOrEmpty(property.comment)) { _list.Add(padLeftString($"#{property.comment}", indent)); }
                         _list.AddRange(new ConstructOutputYAML().Build(property, indent, true));
@@ -32,7 +35,7 @@ namespace k8config
                     else
                     {
                         if (!String.IsNullOrEmpty(property.comment)) { _list.Add(padLeftString($"#{property.comment}", indent)); }
-                        if (!string.IsNullOrEmpty(property.type))
+                        if (property.type != FieldType.Object)
                         {
                             if (tagfirst)
                             {

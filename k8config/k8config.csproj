@@ -13,5 +13,6 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="Spectre.Console" Version="0.41.0" />
   </ItemGroup>
 </Project>

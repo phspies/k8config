@@ -15,8 +15,8 @@ namespace k8config.DataModels
         public string reference { get; set; }
         public string fullpath { get; set; }
         public string description { get; set; }
-        public string format { get; set; }
-        public string type { get; set; }
+        public FieldFormat format { get; set; }
+        public FieldType type { get; set; }
         public List<SourceGroupType> properties { get; set; }
     }
 }

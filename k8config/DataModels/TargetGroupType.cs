@@ -19,9 +19,26 @@ namespace k8config.DataModels
         public string comment { get; set; }
         public string name { get; set; }
         public string value { get; set; }
-        public string format { get; set; }
-        public bool isItem { get; set; }
-        public string type { get; set; }
+        public FieldFormat format { get; set; }
+        public FieldType type { get; set; }
         public List<TargetGroupType> properties { get; set; }
+    }
+    public enum FieldFormat
+    {
+        Object = 0,
+        Array = 1,
+        Map = 2,
+        Item = 3,
+        Int32 = 4,
+        Int64 = 5
+    }
+    public enum FieldType
+    {
+        Object = 0,
+        String = 1,
+        Integer = 2,
+        Boolean = 3,
+        Array = 4,
+
     }
 }
