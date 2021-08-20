@@ -2,17 +2,24 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <StartupObject>k8config.Program</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ReadLine\**" />
+    <EmbeddedResource Remove="ReadLine\**" />
+    <None Remove="ReadLine\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="Newtonsoft.Json" />
     <None Remove="morelinq" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="KubernetesClient" Version="6.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="morelinq" Version="3.3.2" />
-    <PackageReference Include="Spectre.Console" Version="0.41.0" />
+    <PackageReference Include="Terminal.Gui" Version="1.1.1" />
+    <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
 </Project>
