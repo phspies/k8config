@@ -32,6 +32,7 @@ namespace k8config.DataModels
     }
     public class SessionDefinedKind
     {
+        public string name { get; set; }
         public int index { get; set; }
         public string kind { get; set; }
         public Object KubeObject { get; set; }

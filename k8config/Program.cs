@@ -27,6 +27,7 @@ namespace k8config
         static Label commandPromptLabel = new Label();
         static TextField commandPromptTextField = new TextField("");
         static Window definedYAMLWindow = new Window();
+        static Window availableKindsPopup = new Window();
         static void Main(string[] args)
         {
             AssemblySubsystem.BuildAvailableAssemblyList();
@@ -34,46 +35,16 @@ namespace k8config
             var top = Application.Top;
             top.TabStop = true;
             top.ColorScheme.Normal = new Terminal.Gui.Attribute(Color.Black, Color.White);
-            //var availableKindsWindow = new Window() { Title = "Available Kubernetes Kinds", Width = 35, Height = Dim.Fill() - 4 };
-            //var definedKindsWindow = new Window() { Title = "Defined Kubernetes Kinds", X = 36, Width = 35, Height = Dim.Fill() - 4 };
-            ////top.Add(availableKindsWindow, definedKindsWindow);
-            //ListView tableView = new ListView()
-            //{
-            //    X = 0,
-            //    Y = 0,
-            //    Width = 35,
-            //    Height = Dim.Fill(),
-            //    AllowsMultipleSelection = false,
-            //    AllowsMarking = false,
-            //    CanFocus = false,
-            //    TabStop = false
-            //};
-            //tableView.SetSource(GlobalVariables.availableKubeTypes.Select(x => x.kind).ToList());
-            //availableKindsWindow.Add(tableView);
-
-
-
-            //var menu = new MenuBar(new MenuBarItem[] {
-            //    new MenuBarItem ("_File", new MenuItem [] {
-            //        new MenuItem ("_New", "Creates new file", null),
-            //        new MenuItem ("_Close", "",null),
-            //        new MenuItem ("_Quit", "", () => { if (Quit ()) top.Running = false; })
-            //    }),
-            //    new MenuBarItem ("_Edit", new MenuItem [] {
-            //        new MenuItem ("_Copy", "", null),
-            //        new MenuItem ("C_ut", "", null),
-            //        new MenuItem ("_Paste", "", null)
-            //    })
-            //});
-            //top.Add(menu);
-            definedYAMLWindow = new Window() { Title = "Defined Kubernetes Kinds", X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() - 10 };
-            var commandWindow = new Window() { Title = "Command Line", Y = top.Bounds.Height - 3, Width = Dim.Fill(), Height = 3 };
-            top.DrawContent += (e) => { commandWindow.Y = top.Bounds.Height - 3; };
+          
+            definedYAMLWindow = new Window() { Title = "Selected Definition", X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() - 11 };
+            var commandWindow = new Window() { Title = "Command Line", Y = Pos.Bottom(definedYAMLWindow) + 1, Width = Dim.Fill(), Height = 3 };
+            Label messageBarItem = new Label("This is a test");
+            top.DrawContent += (e) => { commandWindow.Y = top.Bounds.Height - 4; };
             top.Add(commandWindow, definedYAMLWindow);
 
             commandPromptLabel = new Label(string.Join(":", GlobalVariables.promptArray) + ">") { TextAlignment = TextAlignment.Left, X = 1 };
             commandPromptTextField = new TextField("") { X = Pos.Right(commandPromptLabel) + 1, Width = Dim.Fill(), TabStop = true };
-            var availableKindsPopup = new Window() { Title = "Available Commands", TabStop = false, CanFocus = false };
+            availableKindsPopup = new Window() { Title = "Available Commands", TabStop = false, CanFocus = false };
             availableKindsPopup.Y = Pos.Top(commandWindow) - 7;
             availableKindsPopup.Width = Dim.Fill();
             availableKindsPopup.Height = 7;
@@ -89,11 +60,17 @@ namespace k8config
                 CanFocus = false,
                 TabStop = false
             };
-
-
-
-            availableKindsList.SetSourceAsync(GlobalVariables.rootKnownCommands);
             availableKindsPopup.Add(availableKindsList);
+       
+            messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
+            messageBarItem.Width = Dim.Fill();
+            messageBarItem.Text = " No definitions found";
+            messageBarItem.CanFocus = false;
+            messageBarItem.Y = Pos.Bottom(commandWindow);
+            
+            top.Add(messageBarItem);
+
+            updateAvailableKindsList();
 
             commandPromptTextField.KeyPress += (e) =>
             {
@@ -131,49 +108,73 @@ namespace k8config
                         {
                             GlobalVariables.promptArray.Remove(GlobalVariables.promptArray.Last());
                             repositionCommandInput();
+                            drawYAML();
                         }
                     }
                     if (currentInputText.Split().Count() > 1)
                     {
                         string[] args = commandPromptTextField.Text.ToString().Split();
-                        if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
+                        if (args[0] == "new")
                         {
-                            var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
-                            GlobalVariables.promptArray.Add(args[1]);
-                            Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
-                            object _object = Activator.CreateInstance(currentType);
-                            _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
-                            _object.GetType().GetProperty("ApiVersion").SetValue(_object, $"{kubeObject.group}/{kubeObject.version}");
-                            if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
+                            if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
                             {
-                                withMetadata.Metadata = new V1ObjectMeta();
+                                var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
+                                Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
+                                object _object = Activator.CreateInstance(currentType);
+                                _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
+                                _object.GetType().GetProperty("ApiVersion").SetValue(_object, $"{kubeObject.group}/{kubeObject.version}");
+                                if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
+                                {
+                                    withMetadata.Metadata = new V1ObjectMeta();
+                                }
+                                SessionDefinedKind newSessionKind = new SessionDefinedKind()
+                                {
+                                    index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
+                                    kind = kubeObject.kind,
+                                    KubeObject = _object
+                                };
+                                GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
+                                GlobalVariables.promptArray.Add(newSessionKind.index.ToString());
+                                repositionCommandInput();
+                                drawYAML();
                             }
-
-                            GlobalVariables.sessionDefinedKinds.Add(new SessionDefinedKind()
-                            {
-                                index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
-                                kind = kubeObject.kind,
-                                KubeObject = _object
-                            });
-                            repositionCommandInput();
-                            drawYAML();
                         }
+                        else if (args[0] == "select")
+                        {
+                            int index = 0;
+                            if (int.TryParse(args[1], out index))
+                            {
+                                if (GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                {
+                                    var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
+                                    messageBarItem.Text = $" {selectedKind.kind}{(string.IsNullOrEmpty(selectedKind.name) ? "" : selectedKind.name)} selected";
+                                    GlobalVariables.promptArray.Add(index.ToString());
+                                    repositionCommandInput();
+                                    drawYAML();
+                                }
+                                else
+                                {
+                                    messageBarItem.Text = " Item not found";
+                                }
+                            }
+                            else
+                            {
+                                messageBarItem.Text = " Value entered is not a integer";
+                            }
+                        }
+                        else
+                        {
+                            messageBarItem.Text = " Command not found";
+                        }
+                    }
+                    else
+                    {
+                        messageBarItem.Text = " Command not found";
                     }
                     commandPromptTextField.Text = "";
                     autoCompleteInterruptText = "";
                 }
-                if (commandPromptTextField.Text.StartsWith("new"))
-                {
-                    availableKindsPopup.Title = "Available Kinds";
-
-                    availableKindsList.SetSource(GlobalVariables.availableKubeTypes.Select(x => x.kind).Where(x => x.StartsWith(commandPromptTextField.Text.ToString().Replace("new ", ""))).ToList());
-                }
-                else if (GlobalVariables.promptArray.Count() > 1)
-                {
-                    availableKindsPopup.Title = "Available Commands";
-                    availableKindsList.SetSource(GlobalVariables.rootKnownCommands);
-                }
-
+                updateAvailableKindsList();
             };
             commandWindow.Add(
                 commandPromptLabel, commandPromptTextField
@@ -182,11 +183,6 @@ namespace k8config
             var config = new KubernetesClientConfiguration { Host = "http://127.0.0.1:8000" };
             var client = new Kubernetes(config);
 
-            static bool Quit()
-            {
-                var n = MessageBox.Query(50, 7, "Quit Demo", "Are you sure you want to quit this demo?", "Yes", "No");
-                return n == 0;
-            }
             static string NextAutoComplete(string _text, string[] _availableOptions)
             {
                 string availableOption = "";
@@ -201,6 +197,40 @@ namespace k8config
                 }
                 return availableOption;
             }
+            static void updateAvailableKindsList()
+            {
+                if (GlobalVariables.promptArray.Count() == 1 && !String.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
+                {
+                    availableKindsPopup.Title = "Available Commands";
+                    GlobalVariables.knownCommands = new List<string>() { "new", "exit" };
+                    availableKindsList.SetSourceAsync(GlobalVariables.knownCommands);
+                }
+                if (GlobalVariables.promptArray.Count() == 1 && GlobalVariables.sessionDefinedKinds.Count() > 0)
+                {
+                    availableKindsPopup.Title = "Available Commands";
+                    availableKindsList.SetSourceAsync(new List<string>() { "new", "select", "delete", "exit" });
+                }
+                if (GlobalVariables.promptArray.Count() > 1)
+                {
+                    availableKindsPopup.Title = "Available Commands";
+                    availableKindsList.SetSourceAsync(new List<string>() { ".." });
+                }
+                if (commandPromptTextField.Text.StartsWith("new"))
+                {
+                    availableKindsPopup.Title = "Available Kinds";
+                    availableKindsList.SetSourceAsync(GlobalVariables.availableKubeTypes.Select(x => x.kind).Where(x => x.StartsWith(commandPromptTextField.Text.ToString().Replace("new ", ""))).ToList());
+                }
+                if (commandPromptTextField.Text.StartsWith("select"))
+                {
+                    availableKindsPopup.Title = "Available Defined Kinds";
+                    availableKindsList.SetSourceAsync(GlobalVariables.sessionDefinedKinds.Select(x => $"[{x.index}] {x.name} {x.kind}").ToList());
+                }
+                else
+                {
+                    availableKindsPopup.Title = "Available Commands";
+                    availableKindsList.SetSourceAsync(GlobalVariables.rootKnownCommands);
+                }
+            }
             static void repositionCommandInput()
             {
                 commandPromptLabel.Text = string.Join(":", GlobalVariables.promptArray) + ">";
@@ -210,24 +240,18 @@ namespace k8config
             static void drawYAML()
             {
                 definedYAMLWindow.Text = "";
-                GlobalVariables.sessionDefinedKinds.ForEach(kind =>
+                if (GlobalVariables.promptArray.Count() > 1)
                 {
-                    //var serializer = new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
-                    var json = JsonConvert.SerializeObject(kind.KubeObject, Formatting.Indented, new JsonSerializerSettings
+                    SessionDefinedKind currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
+                    definedYAMLWindow.Text = JsonConvert.SerializeObject(currentSelectedKind.KubeObject, Formatting.Indented, new JsonSerializerSettings
                     {
                         NullValueHandling = NullValueHandling.Ignore
                     });
-
-                    var expConverter = new ExpandoObjectConverter();
-                    dynamic deserializedObject = JsonConvert.DeserializeObject<ExpandoObject>(json, expConverter);
-
-                    var serializer = new YamlDotNet.Serialization.Serializer();
-                    string yaml = serializer.Serialize(kind.KubeObject);
-
-                    definedYAMLWindow.Text += json;
-
-                    definedYAMLWindow.Text += "\n---\n";
-                });
+                }
+                else
+                {
+                    definedYAMLWindow.Text = "";
+                }
             }
 
 
