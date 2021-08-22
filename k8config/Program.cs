@@ -94,6 +94,15 @@ namespace k8config
                             }
                         }
                     }
+                    else
+                    {
+                        int currentSelectedIndex = 0;
+                        //if the current selected item is a selected array item
+                        if (int.TryParse(GlobalVariables.promptArray.Last(), out currentSelectedIndex))
+                        {
+
+                        }
+                    }
                     e.Handled = true;
                 }
             };
@@ -111,65 +120,99 @@ namespace k8config
                             drawYAML();
                         }
                     }
-                    if (currentInputText.Split().Count() > 1)
+                    else if (GlobalVariables.sessionDefinedKinds.Count() > 0 && currentInputText == "list")
                     {
-                        string[] args = commandPromptTextField.Text.ToString().Split();
-                        if (args[0] == "new")
+                        if (GlobalVariables.promptArray.Count() == 1)
                         {
-                            if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
-                            {
-                                var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
-                                Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
-                                object _object = Activator.CreateInstance(currentType);
-                                _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
-                                _object.GetType().GetProperty("ApiVersion").SetValue(_object, $"{kubeObject.group}/{kubeObject.version}");
-                                if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
-                                {
-                                    withMetadata.Metadata = new V1ObjectMeta();
-                                }
-                                SessionDefinedKind newSessionKind = new SessionDefinedKind()
-                                {
-                                    index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
-                                    kind = kubeObject.kind,
-                                    KubeObject = _object
-                                };
-                                GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
-                                GlobalVariables.promptArray.Add(newSessionKind.index.ToString());
-                                repositionCommandInput();
-                                drawYAML();
-                            }
+                            GlobalVariables.sessionDefinedKinds.ForEach(x => definedYAMLWindow.Text += $"[{x.index}] {x.name} {x.kind}\n");
                         }
-                        else if (args[0] == "select")
+                    }
+                    else
+                    {
+                        if (currentInputText.Split(" ").Count() > 1)
                         {
-                            int index = 0;
-                            if (int.TryParse(args[1], out index))
+                            string[] args = commandPromptTextField.Text.ToString().Split();
+                            if (args[0] == "new")
                             {
-                                if (GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
                                 {
-                                    var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
-                                    messageBarItem.Text = $" {selectedKind.kind}{(string.IsNullOrEmpty(selectedKind.name) ? "" : selectedKind.name)} selected";
-                                    GlobalVariables.promptArray.Add(index.ToString());
+                                    var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
+                                    Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
+                                    object _object = Activator.CreateInstance(currentType);
+                                    _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
+                                    _object.GetType().GetProperty("ApiVersion").SetValue(_object, $"{kubeObject.group}/{kubeObject.version}");
+                                    if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
+                                    {
+                                        withMetadata.Metadata = new V1ObjectMeta();
+                                    }
+                                    SessionDefinedKind newSessionKind = new SessionDefinedKind()
+                                    {
+                                        index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
+                                        kind = kubeObject.kind,
+                                        KubeObject = _object
+                                    };
+                                    GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
+                                    GlobalVariables.promptArray.Add(newSessionKind.index.ToString());
+                                    messageBarItem.Text = $" {newSessionKind.kind} created and selected";
                                     repositionCommandInput();
                                     drawYAML();
                                 }
+                            }
+                            else if (args[0] == "select")
+                            {
+                                int index = 0;
+                                if (int.TryParse(args[1], out index))
+                                {
+                                    if (GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                    {
+                                        var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
+                                        messageBarItem.Text = $" {selectedKind.kind}{(string.IsNullOrEmpty(selectedKind.name) ? "" : selectedKind.name)} selected";
+                                        GlobalVariables.promptArray.Add(index.ToString());
+                                        repositionCommandInput();
+                                        drawYAML();
+                                    }
+                                    else
+                                    {
+                                        messageBarItem.Text = " Item not found";
+                                    }
+                                }
                                 else
                                 {
-                                    messageBarItem.Text = " Item not found";
+                                    messageBarItem.Text = " Value entered is not a integer";
                                 }
                             }
+                            else if (args[0] == "delete")
+                            {
+                                int index = 0;
+                                if (int.TryParse(args[1], out index))
+                                {
+                                    if (GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                    {
+                                        GlobalVariables.sessionDefinedKinds.Remove(GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index));
+                                        messageBarItem.Text = " Definition deleted";
+                                        repositionCommandInput();
+                                        drawYAML();
+                                    }
+                                    else
+                                    {
+                                        messageBarItem.Text = " Item not found";
+                                    }
+                                }
+                                else
+                                {
+                                    messageBarItem.Text = " Value entered is not a integer";
+                                }
+                            }
+
                             else
                             {
-                                messageBarItem.Text = " Value entered is not a integer";
+                                messageBarItem.Text = " Command not found";
                             }
                         }
                         else
                         {
                             messageBarItem.Text = " Command not found";
                         }
-                    }
-                    else
-                    {
-                        messageBarItem.Text = " Command not found";
                     }
                     commandPromptTextField.Text = "";
                     autoCompleteInterruptText = "";
@@ -199,37 +242,56 @@ namespace k8config
             }
             static void updateAvailableKindsList()
             {
-                if (GlobalVariables.promptArray.Count() == 1 && !String.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
+                if (String.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
                 {
-                    availableKindsPopup.Title = "Available Commands";
-                    GlobalVariables.knownCommands = new List<string>() { "new", "exit" };
-                    availableKindsList.SetSourceAsync(GlobalVariables.knownCommands);
-                }
-                if (GlobalVariables.promptArray.Count() == 1 && GlobalVariables.sessionDefinedKinds.Count() > 0)
-                {
-                    availableKindsPopup.Title = "Available Commands";
-                    availableKindsList.SetSourceAsync(new List<string>() { "new", "select", "delete", "exit" });
+                    autoCompleteInterruptText = "";
+                    if (GlobalVariables.promptArray.Count() == 1)
+                    {
+                        availableKindsPopup.Title = "Available Commands";
+                        if (GlobalVariables.sessionDefinedKinds.Count() == 0)
+                        {
+                            GlobalVariables.knownCommands = new List<string>() { "new", "exit" };
+                        }
+                        else
+                        {
+                            GlobalVariables.knownCommands = new List<string>() { "new", "delete", "select", "list", "exit" };
+                        }
+                        availableKindsList.SetSourceAsync(GlobalVariables.knownCommands);
+                    }
                 }
                 if (GlobalVariables.promptArray.Count() > 1)
                 {
+                    List<string> avalableCommands = new List<string>() { ".." };
                     availableKindsPopup.Title = "Available Commands";
-                    availableKindsList.SetSourceAsync(new List<string>() { ".." });
+                    GlobalVariables.sessionDefinedKinds.First(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject.RetrieveAttributeValues().ForEach(x => avalableCommands.Add(x.name));
+                    availableKindsList.SetSourceAsync(avalableCommands);
+
                 }
                 if (commandPromptTextField.Text.StartsWith("new"))
                 {
                     availableKindsPopup.Title = "Available Kinds";
                     availableKindsList.SetSourceAsync(GlobalVariables.availableKubeTypes.Select(x => x.kind).Where(x => x.StartsWith(commandPromptTextField.Text.ToString().Replace("new ", ""))).ToList());
                 }
-                if (commandPromptTextField.Text.StartsWith("select"))
+                if (commandPromptTextField.Text.StartsWith("select") || commandPromptTextField.Text.StartsWith("delete"))
                 {
-                    availableKindsPopup.Title = "Available Defined Kinds";
-                    availableKindsList.SetSourceAsync(GlobalVariables.sessionDefinedKinds.Select(x => $"[{x.index}] {x.name} {x.kind}").ToList());
+                    if (GlobalVariables.promptArray.Count() == 1)
+                    {
+                        availableKindsPopup.Title = "Available Defined Kinds";
+                        availableKindsList.SetSourceAsync(GlobalVariables.sessionDefinedKinds.Select(x => $"[{x.index}] {x.name} {x.kind}").ToList());
+                    }
                 }
-                else
+            }
+            static List<string> retrieveAvailableOptions()
+            {
+                List<string> tmpAvailableOptions = new List<string>();
+                int currentSelectedIndex = 0;
+                //if the current selected item is a selected array item
+                if (int.TryParse(GlobalVariables.promptArray.Last(), out currentSelectedIndex))
                 {
-                    availableKindsPopup.Title = "Available Commands";
-                    availableKindsList.SetSourceAsync(GlobalVariables.rootKnownCommands);
+
                 }
+
+                return tmpAvailableOptions;
             }
             static void repositionCommandInput()
             {
