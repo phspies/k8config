@@ -4,8 +4,10 @@ using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Dynamic;
@@ -35,7 +37,7 @@ namespace k8config
             var top = Application.Top;
             top.TabStop = true;
             top.ColorScheme.Normal = new Terminal.Gui.Attribute(Color.Black, Color.White);
-          
+
             definedYAMLWindow = new Window() { Title = "Selected Definition", X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() - 11 };
             var commandWindow = new Window() { Title = "Command Line", Y = Pos.Bottom(definedYAMLWindow) + 1, Width = Dim.Fill(), Height = 3 };
             Label messageBarItem = new Label("This is a test");
@@ -61,13 +63,13 @@ namespace k8config
                 TabStop = false
             };
             availableKindsPopup.Add(availableKindsList);
-       
+
             messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
             messageBarItem.Width = Dim.Fill();
             messageBarItem.Text = " No definitions found";
             messageBarItem.CanFocus = false;
             messageBarItem.Y = Pos.Bottom(commandWindow);
-            
+
             top.Add(messageBarItem);
 
             updateAvailableKindsList();
@@ -76,33 +78,39 @@ namespace k8config
             {
                 if (e.KeyEvent.KeyValue == 1048599 && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
                 {
+                    List<string> possibleOptions = new List<string>();
                     string[] args = commandPromptTextField.Text.ToString().Split();
                     if (args.Count() > 1)
                     {
                         if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1];
-                        string[] possibleOptions = GlobalVariables.availableKubeTypes.Select(x => x.kind).Where(x => x.StartsWith(autoCompleteInterruptText)).ToArray();
+                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
                         availableKindsList.SetSource(possibleOptions.ToList());
-                        var optionAvailable = NextAutoComplete(autoCompleteInterruptText, possibleOptions);
-                        commandPromptTextField.Text = $"{args[0]} {optionAvailable}";
-                        if (possibleOptions.Length != 0)
-                        {
-                            for (int index = 0; possibleOptions.Count() > index - 1; index++)
-                            {
-                                //availableKindsList(); need to set the focus of list view to the current displayed autocomplete option shown
-                                if (possibleOptions[index] == optionAvailable)
-                                { break; }
-                            }
-                        }
+                        commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(autoCompleteInterruptText, possibleOptions)}";
+                    }
+                    else if (args.Count() == 1 && args[0] != "")
+                    {
+                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[0];
+                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
+                        availableKindsList.SetSource(possibleOptions.ToList());
+                        commandPromptTextField.Text = $"{NextAutoComplete(autoCompleteInterruptText, possibleOptions)}";
                     }
                     else
                     {
-                        int currentSelectedIndex = 0;
-                        //if the current selected item is a selected array item
-                        if (int.TryParse(GlobalVariables.promptArray.Last(), out currentSelectedIndex))
-                        {
-
-                        }
+                        autoCompleteInterruptText = "";
+                        possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x=> $"{x.name} [{x.displayType}]").ToList();
+                        availableKindsList.SetSource(possibleOptions.ToList());
                     }
+
+
+                    //if (possibleOptions.Count != 0)
+                    //{
+                    //    for (int index = 0; possibleOptions.Count() > (index - 1); index++)
+                    //    {
+                    //        //availableKindsList(); need to set the focus of list view to the current displayed autocomplete option shown
+                    //        if (possibleOptions[index] == optionAvailable)
+                    //        { break; }
+                    //    }
+                    //}
                     e.Handled = true;
                 }
             };
@@ -111,6 +119,7 @@ namespace k8config
                 if (e.KeyEvent.KeyValue == 10 && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
                 {
                     string currentInputText = commandPromptTextField.Text.ToString();
+                    //direct commands
                     if (currentInputText == "..")
                     {
                         if (GlobalVariables.promptArray.Count() > 1)
@@ -126,9 +135,39 @@ namespace k8config
                         {
                             GlobalVariables.sessionDefinedKinds.ForEach(x => definedYAMLWindow.Text += $"[{x.index}] {x.name} {x.kind}\n");
                         }
+                        else if (KubeObject.GetCurrentObject().IsListType())
+                        {
+                            definedYAMLWindow.Text = "";
+                            KubeObject.GetNestedList(KubeObject.GetCurrentObject()).ForEach(x =>
+                            {
+                                definedYAMLWindow.Text += $"[{x.index}] {x.name}\n";
+                            });
+                        }
+                    }
+                    else if (currentInputText == "new")
+                    {
+                        //add new object to the List<T> object
+                        object currentObject = KubeObject.GetCurrentObject();
+                        if (currentObject.IsListType())
+                        {
+                            Type selectListType = currentObject.GetType().GetTypeInfo().GetGenericArguments()[0];
+                            currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListType) });
+                            messageBarItem.Text = $" {selectListType.Name} added to {GlobalVariables.promptArray.Last()}";
+                            GlobalVariables.promptArray.Add(KubeObject.GetNestedList(currentObject).Last().index.ToString());
+                            repositionCommandInput();
+                            drawYAML();
+                        }
                     }
                     else
                     {
+                        //inline value setting command
+                        if (currentInputText.Split("=").Count() > 1)
+                        {
+                            string[] args = commandPromptTextField.Text.ToString().CommandToArray();
+
+
+                        }
+                        //inline type commands
                         if (currentInputText.Split(" ").Count() > 1)
                         {
                             string[] args = commandPromptTextField.Text.ToString().Split();
@@ -163,22 +202,36 @@ namespace k8config
                                 int index = 0;
                                 if (int.TryParse(args[1], out index))
                                 {
-                                    if (GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                    if (KubeObject.IsCurrentObjectRoot())
                                     {
-                                        var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
-                                        messageBarItem.Text = $" {selectedKind.kind}{(string.IsNullOrEmpty(selectedKind.name) ? "" : selectedKind.name)} selected";
+                                        if (KubeObject.DoesRootIndexExist(index))
+                                        {
+                                            var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
+                                            messageBarItem.Text = $" {selectedKind.kind}{(string.IsNullOrEmpty(selectedKind.name) ? "" : selectedKind.name)} selected";
+                                            GlobalVariables.promptArray.Add(index.ToString());
+                                            repositionCommandInput();
+                                            drawYAML();
+                                        }
+                                        else
+                                        {
+                                            messageBarItem.Text = " Item not found";
+                                        }
+                                    }
+                                    else if (KubeObject.DoesNestedIndexExist(KubeObject.GetCurrentObject(), index))
+                                    {
+                                        messageBarItem.Text = $" {index} selected";
                                         GlobalVariables.promptArray.Add(index.ToString());
                                         repositionCommandInput();
                                         drawYAML();
                                     }
                                     else
                                     {
-                                        messageBarItem.Text = " Item not found";
+                                        messageBarItem.Text = $" {index} not found";
                                     }
                                 }
                                 else
                                 {
-                                    messageBarItem.Text = " Value entered is not a integer";
+                                    messageBarItem.Text = $" Value [{args[1]}] entered is not a integer";
                                 }
                             }
                             else if (args[0] == "delete")
@@ -211,11 +264,43 @@ namespace k8config
                         }
                         else
                         {
-                            messageBarItem.Text = " Command not found";
+                            if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == currentInputText))
+                            {
+                                object tmpObject = KubeObject.GetCurrentObject();
+                                if (tmpObject.RetrieveAttributeValues().Exists(x => x.name.ToLower() == currentInputText.ToLower()))
+                                {
+                                    var currentObject = tmpObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == currentInputText.ToLower());
+                                    if (tmpObject.GetType().GetProperty(currentObject.Name).GetValue(tmpObject) == null)
+                                    {
+                                        if (currentObject.PropertyType.IsGenericType)
+                                        {
+                                            var test = currentObject.PropertyType.GetGenericTypeDefinition();
+                                            if (currentObject.PropertyType.GetGenericTypeDefinition() == typeof(IList<>))
+                                            {
+                                                var listType = typeof(List<>);
+                                                var constructedListType = listType.MakeGenericType(currentObject.PropertyType.GetGenericArguments()[0]);
+                                                tmpObject.GetType().GetProperty(currentObject.Name).SetValue(tmpObject, Activator.CreateInstance(constructedListType));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            tmpObject.GetType().GetProperty(currentObject.Name).SetValue(tmpObject, Activator.CreateInstance(currentObject.PropertyType));
+                                        }
+                                    }
+                                    GlobalVariables.promptArray.Add(currentInputText.ToLower());
+                                    repositionCommandInput();
+                                    drawYAML();
+                                }
+                            }
+                            else
+                            {
+                                messageBarItem.Text = " Command not found";
+                            }
                         }
                     }
                     commandPromptTextField.Text = "";
                     autoCompleteInterruptText = "";
+
                 }
                 updateAvailableKindsList();
             };
@@ -226,12 +311,12 @@ namespace k8config
             var config = new KubernetesClientConfiguration { Host = "http://127.0.0.1:8000" };
             var client = new Kubernetes(config);
 
-            static string NextAutoComplete(string _text, string[] _availableOptions)
+            static string NextAutoComplete(string _text, List<string> _availableOptions)
             {
                 string availableOption = "";
                 if (_availableOptions.Count() > 0)
                 {
-                    if (autoCompleteInterruptIndex > _availableOptions.Length - 1)
+                    if (autoCompleteInterruptIndex > _availableOptions.Count - 1)
                     {
                         autoCompleteInterruptIndex = 0;
                     }
@@ -242,56 +327,89 @@ namespace k8config
             }
             static void updateAvailableKindsList()
             {
-                if (String.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
-                {
-                    autoCompleteInterruptText = "";
-                    if (GlobalVariables.promptArray.Count() == 1)
-                    {
-                        availableKindsPopup.Title = "Available Commands";
-                        if (GlobalVariables.sessionDefinedKinds.Count() == 0)
-                        {
-                            GlobalVariables.knownCommands = new List<string>() { "new", "exit" };
-                        }
-                        else
-                        {
-                            GlobalVariables.knownCommands = new List<string>() { "new", "delete", "select", "list", "exit" };
-                        }
-                        availableKindsList.SetSourceAsync(GlobalVariables.knownCommands);
-                    }
-                }
-                if (GlobalVariables.promptArray.Count() > 1)
-                {
-                    List<string> avalableCommands = new List<string>() { ".." };
-                    availableKindsPopup.Title = "Available Commands";
-                    GlobalVariables.sessionDefinedKinds.First(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject.RetrieveAttributeValues().ForEach(x => avalableCommands.Add(x.name));
-                    availableKindsList.SetSourceAsync(avalableCommands);
-
-                }
-                if (commandPromptTextField.Text.StartsWith("new"))
-                {
-                    availableKindsPopup.Title = "Available Kinds";
-                    availableKindsList.SetSourceAsync(GlobalVariables.availableKubeTypes.Select(x => x.kind).Where(x => x.StartsWith(commandPromptTextField.Text.ToString().Replace("new ", ""))).ToList());
-                }
-                if (commandPromptTextField.Text.StartsWith("select") || commandPromptTextField.Text.StartsWith("delete"))
-                {
-                    if (GlobalVariables.promptArray.Count() == 1)
-                    {
-                        availableKindsPopup.Title = "Available Defined Kinds";
-                        availableKindsList.SetSourceAsync(GlobalVariables.sessionDefinedKinds.Select(x => $"[{x.index}] {x.name} {x.kind}").ToList());
-                    }
-                }
+                Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
+                availableKindsPopup.Title = (returnValues.Item1);
+                availableKindsList.SetSourceAsync(returnValues.Item2.Select(x => $"{x.name}").ToList());
             }
-            static List<string> retrieveAvailableOptions()
+            static Tuple<string, List<OptionsSlimType>> retrieveAvailableOptions(bool includeCommands = true, bool autocompleteInAction = false, string searchValue = "")
             {
-                List<string> tmpAvailableOptions = new List<string>();
-                int currentSelectedIndex = 0;
-                //if the current selected item is a selected array item
-                if (int.TryParse(GlobalVariables.promptArray.Last(), out currentSelectedIndex))
+                List<OptionsSlimType> tmpAvailableOptions = new List<OptionsSlimType>();
+                string returnHeader = "";
+                object currentObject = new object();
+                if (GlobalVariables.promptArray.Count() == 1 && includeCommands)
                 {
-
+                    returnHeader = "Available Commands";
+                    if (GlobalVariables.sessionDefinedKinds.Count() == 0)
+                    {
+                        tmpAvailableOptions = new List<OptionsSlimType>() {
+                            new OptionsSlimType() { name = "new" }, 
+                            new OptionsSlimType() { name = "exit" } 
+                        };
+                    }
+                    else
+                    {
+                        tmpAvailableOptions = new List<OptionsSlimType>() {
+                            new OptionsSlimType() { name = "new" },
+                            new OptionsSlimType() { name = "delete" },
+                            new OptionsSlimType() { name = "select" },
+                            new OptionsSlimType() { name = "list" },
+                            new OptionsSlimType() { name = "exit" },
+                        };
+                    }
+                }
+                if (GlobalVariables.promptArray.Count() == 2)
+                {
+                    returnHeader = "Available Options";
+                    if (includeCommands) tmpAvailableOptions.Add(new OptionsSlimType() { name = ".." });
+                    tmpAvailableOptions.AddRange(GlobalVariables.sessionDefinedKinds[int.Parse(GlobalVariables.promptArray[1]) - 1].KubeObject.RetrieveAttributeValues().Select(x => new OptionsSlimType() { name = x.name.ToLower() }).ToList());
+                }
+                else if (GlobalVariables.promptArray.Count() > 2)
+                {
+                    object tmpObject = KubeObject.GetCurrentObject();
+                    if (includeCommands) tmpAvailableOptions.Add(new OptionsSlimType() { name = ".." });
+                    if (tmpObject.IsListType())
+                    {
+                        tmpAvailableOptions = new List<OptionsSlimType>() {
+                            new OptionsSlimType() { name = "new" },
+                            new OptionsSlimType() { name = "delete" },
+                            new OptionsSlimType() { name = "select" },
+                            new OptionsSlimType() { name = "list" },
+                        };
+                    }
+                    else
+                    {
+                        tmpAvailableOptions.AddRange(tmpObject.RetrieveAttributeValues().ToList());
+                    }
                 }
 
-                return tmpAvailableOptions;
+                if (!autocompleteInAction)
+                {
+                    if (GlobalVariables.promptArray.Count() == 1 && commandPromptTextField.Text.StartsWith("new"))
+                    {
+                        returnHeader = "Available Kinds";
+                        if (String.IsNullOrWhiteSpace(searchValue))
+                        {
+                            string[] args = commandPromptTextField.Text.ToString().Split(" ");
+                            if (args.Count() > 1 && !String.IsNullOrWhiteSpace(args[1]))
+                            {
+                                searchValue = args[1].ToString();
+                            }
+                        }
+                        tmpAvailableOptions = GlobalVariables.availableKubeTypes.Select(x => new OptionsSlimType() { name = x.kind }).Where(x => x.name.StartsWith(searchValue)).ToList();
+
+
+                    }
+                    if (commandPromptTextField.Text.StartsWith("select") || commandPromptTextField.Text.StartsWith("delete"))
+                    {
+                        if (GlobalVariables.promptArray.Count() == 1)
+                        {
+                            returnHeader = "Available Defined Kinds";
+                            tmpAvailableOptions = GlobalVariables.sessionDefinedKinds.Select(x => new OptionsSlimType() { name = x.kind, index = x.index }).Where(x => x.name.StartsWith(searchValue)).ToList();
+
+                        }
+                    }
+                }
+                return Tuple.Create(returnHeader, tmpAvailableOptions);
             }
             static void repositionCommandInput()
             {
