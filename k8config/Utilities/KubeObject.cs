@@ -94,7 +94,33 @@ namespace k8config.Utilities
                         object tempvalue = privateObject.GetType().GetProperty(currentObject.Name).GetValue(privateObject);
                         if (tempvalue == null)
                         {
-                            privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, Activator.CreateInstance(currentObject.PropertyType));
+                            Type[] selectListTypes = privateObject.GetType().GetProperty(currentObject.Name).PropertyType.GetGenericArguments();
+                            if (selectListTypes.Length == 1)
+                            {
+                                if (selectListTypes[0].Name == "String")
+                                {
+                                    currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { new String("") });
+                                }
+                                else
+                                {
+                                    currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListTypes[0]) });
+                                }
+                            }
+                            else if (selectListTypes.Length == 2)
+                            {
+                                var temp = ObjectExtensions.ConstructDictionary(selectListTypes[0], selectListTypes[1]);
+                                privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, temp);
+             
+                            }
+
+                            //if (currentObject.PropertyType.Name == typeof(IDictionary<string, string>).Name)
+                            //{
+                            //    privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, Activator.CreateInstance(typeof(Dictionary<string, string>)));
+                            //}
+                            //else
+                            //{
+                            //    privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, Activator.CreateInstance(currentObject.PropertyType));
+                            //}
                         }
                         privateObject = privateObject.GetType().GetProperty(currentObject.Name).GetValue(privateObject);
                     }

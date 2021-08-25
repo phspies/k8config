@@ -97,7 +97,7 @@ namespace k8config
                     else
                     {
                         autoCompleteInterruptText = "";
-                        possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x=> $"{x.name} [{x.displayType}]").ToList();
+                        possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x => $"{x.name} [{x.displayType}]").ToList();
                         availableKindsList.SetSource(possibleOptions.ToList());
                     }
 
@@ -150,10 +150,22 @@ namespace k8config
                         object currentObject = KubeObject.GetCurrentObject();
                         if (currentObject.IsListType())
                         {
-                            Type selectListType = currentObject.GetType().GetTypeInfo().GetGenericArguments()[0];
-                            currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListType) });
-                            messageBarItem.Text = $" {selectListType.Name} added to {GlobalVariables.promptArray.Last()}";
-                            GlobalVariables.promptArray.Add(KubeObject.GetNestedList(currentObject).Last().index.ToString());
+                            Type[] selectListTypes = currentObject.GetType().GetTypeInfo().GetGenericArguments();
+                            if (selectListTypes.Length == 1)
+                            {
+                                if (selectListTypes[0].Name == "String")
+                                {
+                                    currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { new String("") });
+                                }
+                                else
+                                {
+                                    currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListTypes[0]) });
+                                }
+                                messageBarItem.Text = $" {selectListTypes[0].Name} added to {GlobalVariables.promptArray.Last()}";
+                                GlobalVariables.promptArray.Add(KubeObject.GetNestedList(currentObject).Last().index.ToString());
+                            }
+
+
                             repositionCommandInput();
                             drawYAML();
                         }
@@ -164,7 +176,27 @@ namespace k8config
                         if (currentInputText.Split("=").Count() > 1)
                         {
                             string[] args = commandPromptTextField.Text.ToString().CommandToArray();
-
+                            object currentObject = KubeObject.GetCurrentObject();
+                            Type[] selectListTypes = KubeObject.GetCurrentObject().GetType().GetProperty(GlobalVariables.promptArray.Last()).PropertyType.GetGenericArguments();
+                            if (args[0] == "new")
+                            {
+                                string[] values = args[1].Split(":");
+                                if (selectListTypes.Length == values.Length)
+                                {
+                                    if (selectListTypes.Length == 1)
+                                    {
+                                        currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { ObjectExtensions.ConstructDictionary(selectListTypes[0], selectListTypes[1]) });
+                                    }
+                                    else
+                                    {
+                                        currentObject.GetType().GetMethod("Add").Invoke(currentObject, new object[] { values[0], values[1] });
+                                    }
+                                }
+                                else
+                                {
+                                    messageBarItem.Text = $" wrong amount of variable supplied. {selectListTypes.Length} variables expected";
+                                }
+                            }
 
                         }
                         //inline type commands
@@ -193,6 +225,29 @@ namespace k8config
                                     GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
                                     GlobalVariables.promptArray.Add(newSessionKind.index.ToString());
                                     messageBarItem.Text = $" {newSessionKind.kind} created and selected";
+                                    repositionCommandInput();
+                                    drawYAML();
+                                }
+                                else //this is the direct new commands to dictionaries and arrays
+                                {
+                                    object currentObject = KubeObject.GetCurrentObject();
+                                    Type[] selectListTypes = KubeObject.GetCurrentObject().GetType().GetGenericArguments();
+                                    string[] values = args[1].Split(":");
+                                    if (selectListTypes.Length == values.Length)
+                                    {
+                                        if (selectListTypes.Length == 1)
+                                        {
+                                            currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { args[1] });
+                                        }
+                                        else
+                                        {
+                                            currentObject.GetType().GetMethod("Add").Invoke(currentObject, new object[] { values[0], values[1] });
+                                        }
+                                    }
+                                    else
+                                    {
+                                        messageBarItem.Text = $" wrong amount of variable supplied. {selectListTypes.Length} variables expected";
+                                    }
                                     repositionCommandInput();
                                     drawYAML();
                                 }
@@ -256,7 +311,21 @@ namespace k8config
                                     messageBarItem.Text = " Value entered is not a integer";
                                 }
                             }
-
+                            else if (args.Length > 1)
+                            {
+                                if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == args[0]))
+                                {
+                                    object tmpObject = KubeObject.GetCurrentObject();
+                                    if (tmpObject.GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
+                                    {
+                                        var currentObject = tmpObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == args[0].ToLower());
+                                        if (new List<string>() { "String", "Int32", "Int64", "Boolean" }.Contains(currentObject.PropertyType.Name))
+                                        {
+                                            tmpObject.SetValue(currentObject, args[1]);
+                                        }
+                                    }
+                                }
+                            }
                             else
                             {
                                 messageBarItem.Text = " Command not found";
@@ -264,13 +333,18 @@ namespace k8config
                         }
                         else
                         {
+                            string[] args = currentInputText.Split(" ");
                             if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == currentInputText))
                             {
                                 object tmpObject = KubeObject.GetCurrentObject();
                                 if (tmpObject.RetrieveAttributeValues().Exists(x => x.name.ToLower() == currentInputText.ToLower()))
                                 {
                                     var currentObject = tmpObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == currentInputText.ToLower());
-                                    if (tmpObject.GetType().GetProperty(currentObject.Name).GetValue(tmpObject) == null)
+                                    if (new List<string>() { "String", "Int32", "Int64", "Boolean" }.Contains(currentObject.PropertyType.Name))
+                                    {
+                                        messageBarItem.Text = $" This variable requires a value of type {currentObject.PropertyType.Name}";
+                                    }
+                                    else if (tmpObject.GetType().GetProperty(currentObject.Name).GetValue(tmpObject) == null)
                                     {
                                         if (currentObject.PropertyType.IsGenericType)
                                         {
@@ -292,6 +366,8 @@ namespace k8config
                                     drawYAML();
                                 }
                             }
+
+
                             else
                             {
                                 messageBarItem.Text = " Command not found";
@@ -303,6 +379,8 @@ namespace k8config
 
                 }
                 updateAvailableKindsList();
+                repositionCommandInput();
+                drawYAML();
             };
             commandWindow.Add(
                 commandPromptLabel, commandPromptTextField
@@ -329,7 +407,7 @@ namespace k8config
             {
                 Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
                 availableKindsPopup.Title = (returnValues.Item1);
-                availableKindsList.SetSourceAsync(returnValues.Item2.Select(x => $"{x.name}").ToList());
+                availableKindsList.SetSourceAsync(returnValues.Item2.Select(x => $"{x.name} {(String.IsNullOrWhiteSpace(x.displayType) ? "" : "[" + x.displayType + "]")}").ToList());
             }
             static Tuple<string, List<OptionsSlimType>> retrieveAvailableOptions(bool includeCommands = true, bool autocompleteInAction = false, string searchValue = "")
             {
@@ -342,8 +420,8 @@ namespace k8config
                     if (GlobalVariables.sessionDefinedKinds.Count() == 0)
                     {
                         tmpAvailableOptions = new List<OptionsSlimType>() {
-                            new OptionsSlimType() { name = "new" }, 
-                            new OptionsSlimType() { name = "exit" } 
+                            new OptionsSlimType() { name = "new" },
+                            new OptionsSlimType() { name = "exit" }
                         };
                     }
                     else

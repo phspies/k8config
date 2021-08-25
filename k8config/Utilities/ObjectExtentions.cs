@@ -12,6 +12,28 @@ namespace k8config.Utilities
 {
     public static class ObjectExtensions
     {
+        public static object ConstructDictionary(Type KeyType, Type ValueType)
+        {
+            Type[] TemplateTypes = new Type[] { KeyType, ValueType };
+            Type DictionaryType = typeof(Dictionary<,>).MakeGenericType(TemplateTypes);
+
+            return Activator.CreateInstance(DictionaryType);
+        }
+        public static void SetValue(this object instance, PropertyInfo info, object value)
+        {
+            info.SetValue(instance, Convert.ChangeType(value, info.PropertyType));
+        }
+        public static void AddToDictionary(object DictionaryObject, object KeyObject, object ValueObject)
+        {
+            Type DictionaryType = DictionaryObject.GetType();
+
+            if (!(DictionaryType.IsGenericType && DictionaryType.GetGenericTypeDefinition() == typeof(Dictionary<,>)))
+                throw new Exception("sorry object is not a dictionary");
+
+            Type[] TemplateTypes = DictionaryType.GetGenericArguments();
+            var add = DictionaryType.GetMethod("Add", new[] { TemplateTypes[0], TemplateTypes[1] });
+            add.Invoke(DictionaryObject, new object[] { KeyObject, ValueObject });
+        }
         public static T CastTo<T>(this object o) => (T)o;
         public static dynamic CastToReflected(this object o, Type type)
         {
@@ -22,18 +44,29 @@ namespace k8config.Utilities
         }
         public static bool IsListType(this object o)
         {
-            if (o.GetType().IsGenericType)
+            if (o != null)
             {
-                if (o.GetType().Name == typeof(IList<>).Name || o.GetType().Name == typeof(List<>).Name)
+                if (o.GetType().IsGenericType)
                 {
-                    return true;
+                    if (o.GetType().Name == typeof(IList<>).Name || o.GetType().Name == typeof(List<>).Name)
+                    {
+                        return true;
+                    }
+                    else if (o.GetType().Name == typeof(Dictionary<string,string>).Name || o.GetType().Name == typeof(IDictionary<string, string>).Name)
+                    {
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
+                else
+                {
+                    return false;
+                }
             }
             else
             {
                 return false;
-            }
+            }    
         }
         public static ObjectPropertyType RetrieveAttributeValue(this object o, string attributeName)
         {
