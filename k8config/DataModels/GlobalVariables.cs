@@ -6,8 +6,6 @@ namespace k8config.DataModels
 {
     public static class GlobalVariables
     {
-        public static List<string> knownCommands = new List<string>() { "select", "delete", "exit", "new", "list", "comment", ".." };
-        public static List<string> rootKnownCommands = new List<string>() { "select", "delete", "exit", "new", "list" };
         public static JObject availbleDefinitions;
         public static List<string> promptArray = new List<string>() { "k8config" };
         public static List<SourceGroupType> groupSourceKinds = new List<SourceGroupType>();

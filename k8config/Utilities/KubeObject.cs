@@ -3,9 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace k8config.Utilities
 {
@@ -19,27 +16,24 @@ namespace k8config.Utilities
         {
             return GlobalVariables.sessionDefinedKinds.Exists(x => x.index == _index);
         }
+        public static void DeleteNestedAtIndex(object _object, int _index)
+        {
+            if (_object.IsList())
+            {
+                ((IList)_object).RemoveAt(_index);
+            }
+        }
         public static bool DoesNestedIndexExist(object _object, int _index)
         {
-            if (_object.IsListType())
-            {
-                int index = 0;
-                foreach (var currentObject in (IEnumerable)_object)
-                {
-                    if (index == _index) { return true; }
-                    index += 1;
-                }
-                return false;
-            }
-            return false;
+            return (_object.IsList() && ((IList)_object).Count > _index);
         }
         public static List<OptionsSlimType> GetNestedList(object _object)
         {
             List<OptionsSlimType> tmpList = new List<OptionsSlimType>();
-            if (_object.IsListType())
+            if (_object.IsList())
             {
                 int pointer = 0;
-                foreach (var currentObject in (IEnumerable)_object)
+                foreach (var currentObject in (IList)_object)
                 {
                     tmpList.Add(new OptionsSlimType() { index = pointer, name = currentObject.GetType().Name, value = currentObject, type = currentObject.GetType() });
                     pointer += 1;
@@ -50,14 +44,14 @@ namespace k8config.Utilities
         public static object GetNestedObject(object _object, int index)
         {
             object returnObject = null;
-            if (_object.IsListType())
+            if (_object.IsList())
             {
                 int pointer = 0;
-                foreach (var currentObject in (IEnumerable)_object)
+                foreach (var currentObject in (IList)_object)
                 {  
                     if (index == pointer)
                     {
-                        returnObject = currentObject;
+                        return currentObject;
                     }
                     pointer += 1;
                 }
@@ -112,15 +106,6 @@ namespace k8config.Utilities
                                 privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, temp);
              
                             }
-
-                            //if (currentObject.PropertyType.Name == typeof(IDictionary<string, string>).Name)
-                            //{
-                            //    privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, Activator.CreateInstance(typeof(Dictionary<string, string>)));
-                            //}
-                            //else
-                            //{
-                            //    privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, Activator.CreateInstance(currentObject.PropertyType));
-                            //}
                         }
                         privateObject = privateObject.GetType().GetProperty(currentObject.Name).GetValue(privateObject);
                     }
@@ -128,5 +113,6 @@ namespace k8config.Utilities
             }
             return privateObject;
         }
+
     }
 }
