@@ -1,17 +1,21 @@
 ﻿using k8config.DataModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace k8config.Utilities
 {
     public static class ObjectExtensions
     {
+        public static T Clone<T>(this T source)
+        {
+            var serialized = JsonConvert.SerializeObject(source);
+            return JsonConvert.DeserializeObject<T>(serialized);
+        }
+
         public static object ConstructDictionary(Type KeyType, Type ValueType)
         {
             Type[] TemplateTypes = new Type[] { KeyType, ValueType };
@@ -90,7 +94,7 @@ namespace k8config.Utilities
                 }
             }
             else if (o is IList)
-            { 
+            {
                 if (o.GetType().IsGenericType && (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>))))
                 {
                     returnType = o.GetType().GetGenericArguments()[0];
@@ -208,7 +212,7 @@ namespace k8config.Utilities
                         });
                 }
             }
-            
+
             return tmpAttributes;
 
         }

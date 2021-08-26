@@ -3,17 +3,12 @@ using k8config.Utilities;
 using k8s;
 using k8s.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Org.BouncyCastle.Asn1.Sec;
-using Org.BouncyCastle.Asn1.X509.Qualified;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Dynamic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Threading;
 using Terminal.Gui;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -30,27 +25,32 @@ namespace k8config
         static Window definedYAMLWindow = new Window();
         static Window availableKindsPopup = new Window();
         static ListView definedYAMLList = new ListView();
+        static bool currentavailableListUpDown = false;
         static void Main(string[] args)
         {
             AssemblySubsystem.BuildAvailableAssemblyList();
             Application.Init();
             var top = Application.Top;
+
             top.TabStop = true;
             top.ColorScheme.Normal = new Terminal.Gui.Attribute(Color.Black, Color.White);
 
             availableKindsPopup = new Window() { Title = "Available Commands", X = 0, Y = 0, Width = 50, Height = Dim.Fill() - 4, TabStop = false, CanFocus = false };
-            definedYAMLWindow = new Window() { Title = "Selected Definition", X = 50, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() - 4, TabStop = false, CanFocus = false };
-            var commandWindow = new Window() { Title = "Command Line", Y = Pos.Bottom(definedYAMLWindow) + 1, Width = Dim.Fill(), Height = 3 };
+            definedYAMLWindow = new Window() { Title = "Selected Definition", X = availableKindsPopup.Bounds.Right, Y = 0, Width = Dim.Fill(), Height = Dim.Fill() - 4, TabStop = false, CanFocus = false };
+            var commandWindow = new Window() { Title = "Command Line", Y = definedYAMLWindow.Bounds.Bottom + 1, Width = Dim.Fill(), Height = 3 };
+            top.DrawContent += (e) =>
+            {
+                availableKindsPopup.Width = 50;
+                definedYAMLWindow.X = availableKindsPopup.Bounds.Right;
+                commandWindow.Y = definedYAMLWindow.Bounds.Bottom;
+            };
+
             Label messageBarItem = new Label("This is a test");
-            top.DrawContent += (e) => { commandWindow.Y = top.Bounds.Height - 4; };
             top.Add(commandWindow, definedYAMLWindow);
 
             commandPromptLabel = new Label(string.Join(":", GlobalVariables.promptArray) + ">") { TextAlignment = TextAlignment.Left, X = 1 };
             commandPromptTextField = new TextField("") { X = Pos.Right(commandPromptLabel) + 1, Width = Dim.Fill(), TabStop = true };
 
-            //availableKindsPopup.Y = Pos.Top(commandWindow) - 7;
-            //availableKindsPopup.Width = Dim.Fill();
-            //availableKindsPopup.Height = 7;
             top.Add(availableKindsPopup);
             definedYAMLList = new ListView()
             {
@@ -73,10 +73,19 @@ namespace k8config
                 AllowsMultipleSelection = false,
                 AllowsMarking = false,
                 CanFocus = false,
-                TabStop = false
-            };
-            availableKindsPopup.Add(availableKindsList);
+                TabStop = false,
 
+            };
+
+            availableKindsPopup.Add(availableKindsList);
+            availableKindsList.ColorScheme = new ColorScheme()
+            {
+                Normal = new Terminal.Gui.Attribute(Color.Black, Color.White),
+                Focus = new Terminal.Gui.Attribute(Color.White, Color.Cyan),
+                HotNormal = new Terminal.Gui.Attribute(Color.White, Color.Red),
+                HotFocus = new Terminal.Gui.Attribute(Color.Blue, Color.Cyan),
+                Disabled = new Terminal.Gui.Attribute(Color.DarkGray, Color.Black)
+            };
             messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
             messageBarItem.Width = Dim.Fill();
             messageBarItem.Text = " No definitions found";
@@ -87,19 +96,49 @@ namespace k8config
 
             updateAvailableKindsList();
 
+            top.KeyUp += (e) =>
+            {
+                if (e.KeyEvent.Key == Key.CursorDown || e.KeyEvent.Key == Key.CursorUp)
+                {
+                    switch (e.KeyEvent.Key)
+                    {
+                        case Key.CursorUp:
+                            currentavailableListUpDown = true;
+                            if (availableKindsList.SelectedItem > 0)
+                            {
+                                availableKindsList.SelectedItem = availableKindsList.SelectedItem - 1;
+                                availableKindsList.TopItem = availableKindsList.SelectedItem;
+                            }
+                            break;
+                        case Key.CursorDown:
+                            currentavailableListUpDown = true;
+                            if (availableKindsList.SelectedItem < availableKindsList.Source.ToList().Count - 1)
+                            {
+                                availableKindsList.SelectedItem = availableKindsList.SelectedItem + 1;
+                                availableKindsList.TopItem = availableKindsList.SelectedItem;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            };
             commandPromptTextField.KeyPress += (e) =>
             {
-                if (e.KeyEvent.KeyValue == 1048599 && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
+
+                if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
                 {
+                    currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
                     string[] args = commandPromptTextField.Text.ToString().Split();
-                    if (args.Count() > 1)
+                    if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
                     {
                         if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1];
                         possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
                         availableKindsList.SetSource(possibleOptions.ToList());
                         commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(autoCompleteInterruptText, possibleOptions)}";
                         commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+
                     }
                     else if (args.Count() == 1 && args[0] != "")
                     {
@@ -121,11 +160,13 @@ namespace k8config
                     }
                     e.Handled = true;
                 }
+
             };
             commandPromptTextField.KeyUp += (e) =>
             {
-                if (e.KeyEvent.KeyValue == 10 && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
+                if (e.KeyEvent.Key == Key.Enter && !string.IsNullOrEmpty(commandPromptTextField.Text.ToString()))
                 {
+                    currentavailableListUpDown = false;
                     string currentInputText = commandPromptTextField.Text.ToString();
                     //direct commands
                     if (currentInputText == "..")
@@ -301,6 +342,7 @@ namespace k8config
                                     else if (KubeObject.GetCurrentObject().IsList() && KubeObject.DoesNestedIndexExist(KubeObject.GetCurrentObject(), index))
                                     {
                                         KubeObject.DeleteNestedAtIndex(KubeObject.GetCurrentObject(), index);
+                                        drawYAML();
                                     }
                                     else
                                     {
@@ -455,9 +497,25 @@ namespace k8config
             }
             static void updateAvailableKindsList()
             {
-                Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
-                availableKindsPopup.Title = (returnValues.Item1);
-                availableKindsList.SetSourceAsync(returnValues.Item2.Select(x => x.TableView()).ToList());
+                if (currentavailableListUpDown)
+                {
+                    currentavailableListUpDown = false;
+                }
+                else
+                {
+                    Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
+                    availableKindsPopup.Title = (returnValues.Item1);
+                    availableKindsList.SetSource(returnValues.Item2.Select(x => x.TableView()).ToList());
+                    if (!string.IsNullOrWhiteSpace(commandPromptTextField.Text.ToString()))
+                    {
+                        var currentListObect = ((List<String>)availableKindsList.Source.ToList()).Find(x => x.StartsWith(commandPromptTextField.Text.ToString()));
+                        if (!string.IsNullOrWhiteSpace(currentListObect))
+                        {
+                            availableKindsList.SelectedItem = availableKindsList.Source.ToList().IndexOf(currentListObect);
+                        }
+                    }
+                   ;
+                }
             }
             static Tuple<string, List<OptionsSlimType>> retrieveAvailableOptions(bool includeCommands = true, bool autocompleteInAction = false, string searchValue = "")
             {
@@ -511,6 +569,7 @@ namespace k8config
                     {
                         tmpAvailableOptions = new List<OptionsSlimType>() {
                             new OptionsSlimType() { name = "..", isCommand = true, displayType = "back one folder" },
+                            new OptionsSlimType() { name = "/" , isCommand = true, displayType = "back to root"},
                             new OptionsSlimType() { name = "new",isCommand = true, displayType = "create new object" },
                             new OptionsSlimType() { name = "delete",isCommand = true, displayType = "delete object" },
                             new OptionsSlimType() { name = "select",isCommand = true, displayType = "select object" },
@@ -563,11 +622,13 @@ namespace k8config
                 definedYAMLWindow.Text = "";
                 if (GlobalVariables.promptArray.Count() > 1)
                 {
-                    SessionDefinedKind currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
-                    List<string> jsonList = JsonConvert.SerializeObject(currentSelectedKind.KubeObject, Formatting.Indented, new JsonSerializerSettings
-                    {
-                        NullValueHandling = NullValueHandling.Ignore
-                    }).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+                    object currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
+                    var serializer = new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull).Build();
+                    List<string> jsonList = serializer.Serialize(currentSelectedKind).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+                    //List<string> jsonList = JsonConvert.SerializeObject(currentSelectedKind.KubeObject, Formatting.Indented, new JsonSerializerSettings
+                    //{
+                    //    NullValueHandling = NullValueHandling.Ignore
+                    //}).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
                     definedYAMLList.SetSourceAsync(jsonList);
                 }
                 else
