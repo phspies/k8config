@@ -20,7 +20,11 @@
   <ItemGroup>
     <PackageReference Include="KubernetesClient" Version="6.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="SharpYaml" Version="1.6.6" />
     <PackageReference Include="Terminal.Gui" Version="1.2.1" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="YAMLHandeling\" />
   </ItemGroup>
 </Project>

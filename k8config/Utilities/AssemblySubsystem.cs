@@ -14,8 +14,7 @@ namespace k8config.Utilities
     {
         public static void BuildAvailableAssemblyList()
         {
-            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes()).Where(t => t.IsClass && t.Namespace == "k8s.Models");
-            foreach (var assembly in types)
+            foreach (var assembly in GetAvailableAssemblyList())
             {
                 if (assembly?.CustomAttributes.Count() > 0)
                 {
@@ -36,6 +35,10 @@ namespace k8config.Utilities
                     }
                 }
             };
+        }
+        public static IEnumerable<Type> GetAvailableAssemblyList()
+        {
+            return AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes()).Where(t => t.IsClass && t.Namespace == "k8s.Models");
         }
         public static Type[] LoadType(string typeName)
         {

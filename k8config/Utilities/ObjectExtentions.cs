@@ -61,12 +61,11 @@ namespace k8config.Utilities
             {
                 return (o as PropertyInfo).PropertyType.IsGenericType && ((o as PropertyInfo).PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || (o as PropertyInfo).PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)));
             }
-            else
+            else if (o is IList)
             {
-                return o is IList &&
-                   o.GetType().IsGenericType &&
-                   (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)));
+                  return o.GetType().IsGenericType && (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)));
             }
+            return false;
         }
         public static Type GetKubeType(this object o)
         {
@@ -149,9 +148,7 @@ namespace k8config.Utilities
                     {
 
                         o.GetType().GetGenericArguments()[0].GetProperties().ToList().ForEach(x =>
-                        {
-                            //var test2= Activator.CreateInstance(x.PropertyType); 
-                            //var test = x.GetValue(o, null);      
+                        {   
                             if (x.PropertyType.Name == typeof(IList<>).Name)
                             {
                                 if (!removeAttributes.Contains(x.Name))
@@ -184,11 +181,6 @@ namespace k8config.Utilities
                             if (!removeAttributes.Contains(x.Name))
                             {
                                 var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), type = x.GetKubeType(), value = x.GetValue(o, null) };
-                                //if (x.PropertyType.Name != typeof(Nullable<>).Name)
-                                //{
-                                //    tmpObject.isRequired = true;
-                                //}
-
                                 if (x.IsStringArray())
                                 {
                                     tmpObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";
