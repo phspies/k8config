@@ -17,16 +17,13 @@ namespace k8config.Utilities
     public static class YAMLHandeling
     {
         public static void DeserializeFile(string fileLocation)
-        {
-
+        { 
             var input = new StreamReader(fileLocation);
-
             var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
-
             var reader = new Parser(input);
             reader.Consume<StreamStart>();
             DocumentStart outdocument;
-            int index = 0;
+            int index = 1;
             while (reader.Accept(out outdocument))
             {
                 var tempExpandoObject = deserializer.Deserialize<ExpandoObject>(reader);
@@ -50,7 +47,6 @@ namespace k8config.Utilities
                     }
                 }
             }
-
         }
     }
 }

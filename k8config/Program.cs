@@ -35,7 +35,7 @@ namespace k8config
         {
             AssemblySubsystem.BuildAvailableAssemblyList();
 
-            YAMLHandeling.DeserializeFile(@"C:\Users\Phillip\mysql.yaml");
+            YAMLHandeling.DeserializeFile(@"C:\Users\Phillip\mssql.yaml");
 
 
   
