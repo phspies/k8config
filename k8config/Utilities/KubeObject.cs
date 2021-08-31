@@ -35,7 +35,7 @@ namespace k8config.Utilities
                 int pointer = 0;
                 foreach (var currentObject in (IList)_object)
                 {
-                    tmpList.Add(new OptionsSlimType() { index = pointer, name = currentObject.GetType().Name, value = currentObject, type = currentObject.GetType() });
+                    tmpList.Add(new OptionsSlimType() { index = pointer, name = currentObject.GetType().Name, value = currentObject, primaryType = currentObject.GetType() });
                     pointer += 1;
                 }
             }

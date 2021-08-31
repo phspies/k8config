@@ -32,7 +32,7 @@ namespace k8config.Utilities
         {
             info.SetValue(instance, Convert.ChangeType(value, info.PropertyType));
         }
-        public static void AddToDictionary(object DictionaryObject, object KeyObject, object ValueObject)
+        public static void AddToDictionary(this object DictionaryObject, object KeyObject, object ValueObject)
         {
             Type DictionaryType = DictionaryObject.GetType();
 
@@ -125,9 +125,20 @@ namespace k8config.Utilities
 
         public static bool IsDictionary(this object o)
         {
-            return o is IDictionary &&
-               o.GetType().IsGenericType &&
-               o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<Object, Object>));
+            if (o is Type)
+            {
+                return (o as Type).IsGenericType && ((o as Type).GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)) || (o as Type).GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>))) && (o as Type).GetGenericArguments()[0] == typeof(Dictionary<,>);
+            }
+            else if (o is PropertyInfo)
+            {
+                return (o as PropertyInfo).PropertyType.IsGenericType && ((o as PropertyInfo).PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)) || (o as PropertyInfo).PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>)));
+            }
+            else
+            {
+                return o is IDictionary &&
+                   o.GetType().IsGenericType &&
+                   (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>))) && o.GetType().GetGenericArguments()[0] == typeof(Dictionary<,>);
+            }
         }
         public static ObjectPropertyType RetrieveAttributeValue(this object o, string attributeName)
         {
@@ -153,7 +164,7 @@ namespace k8config.Utilities
                             {
                                 if (!removeAttributes.Contains(x.Name))
                                 {
-                                    var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), type = x.PropertyType, isList = (x.PropertyType.Name == typeof(IList<>).Name) };
+                                    var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, isList = (x.PropertyType.Name == typeof(IList<>).Name) };
                                     if (x.GetType().Name != typeof(Nullable).Name || x.GetType().Name != typeof(IList).Name || x.GetType().Name != typeof(IDictionary).Name)
                                     {
                                         tmpObject.isRequired = true;
@@ -165,7 +176,7 @@ namespace k8config.Utilities
                             {
                                 if (!removeAttributes.Contains(x.Name))
                                 {
-                                    tmpAttributes.Add(new OptionsSlimType() { name = x.Name.ToLower(), type = x.PropertyType, isList = false, });
+                                    tmpAttributes.Add(new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, isList = false, });
                                     //kubeObject = x.GetValue(x, null)
                                 }
 
@@ -180,7 +191,7 @@ namespace k8config.Utilities
                         {
                             if (!removeAttributes.Contains(x.Name))
                             {
-                                var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), type = x.GetKubeType(), value = x.GetValue(o, null) };
+                                var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
                                 if (x.IsStringArray())
                                 {
                                     tmpObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";
@@ -189,7 +200,15 @@ namespace k8config.Utilities
                                 else if (x.IsList())
                                 {
                                     tmpObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name}>";
-                                    tmpObject.isList = x.IsList();
+                                    tmpObject.isList = true;
+                                }
+                                else if (x.IsDictionary())
+                                {
+                                    tmpObject.displayType = $"Dictionary<{x.PropertyType.GetGenericArguments()[0].Name},{x.PropertyType.GetGenericArguments()[1].Name}>";
+                                    tmpObject.primaryType = x.PropertyType.GetGenericArguments()[1];
+                                    tmpObject.secondaryType = x.PropertyType.GetGenericArguments()[1];
+                                    tmpObject.properyType = x.PropertyType;
+                                    tmpObject.isDictionary = true;
                                 }
                                 else if (x.PropertyType.GetGenericArguments().Length > 0)
                                 {

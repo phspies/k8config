@@ -24,7 +24,4 @@
     <PackageReference Include="Terminal.Gui" Version="1.2.1" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="YAMLHandeling\" />
-  </ItemGroup>
 </Project>
