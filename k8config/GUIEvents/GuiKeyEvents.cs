@@ -56,7 +56,7 @@ namespace k8config
                 string currentInputText = commandPromptTextField.Text.ToString();
                 if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(currentInputText))
                 {
-                    currentavailableListUpDown = false;
+                   currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
                     string[] args = currentInputText.Split();
                     if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
@@ -110,8 +110,6 @@ namespace k8config
                     if (!string.IsNullOrEmpty(currentInputText))
                     {
                         currentavailableListUpDown = false;
-                        //direct commands
-
                         if (currentInputText == "..")
                         {
                             if (GlobalVariables.promptArray.Count() > 1)
