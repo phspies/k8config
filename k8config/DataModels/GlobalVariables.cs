@@ -14,7 +14,7 @@ namespace k8config.DataModels
         public static bool valuePromptMode = false;
 
 
-
+        public static int displayMode = 0;
         public static List<SessionDefinedKind> sessionDefinedKinds = new List<SessionDefinedKind>();
         public static List<GlobalAssemblyKubeType> availableKubeTypes = new List<GlobalAssemblyKubeType>();
     }

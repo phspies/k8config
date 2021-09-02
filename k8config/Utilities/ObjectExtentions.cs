@@ -44,12 +44,29 @@ namespace k8config.Utilities
             add.Invoke(DictionaryObject, new object[] { KeyObject, ValueObject });
         }
         public static T CastTo<T>(this object o) => (T)o;
-        public static dynamic CastToReflected(this object o, Type type)
+        public static object CastToReflected(this object o, Type type)
         {
-            var methodInfo = typeof(ObjectExtensions).GetMethod(nameof(CastTo), BindingFlags.Static | BindingFlags.Public);
-            var genericArguments = new[] { type };
-            var genericMethodInfo = methodInfo?.MakeGenericMethod(genericArguments);
-            return genericMethodInfo?.Invoke(null, new[] { o });
+            if (type == typeof(string))
+            {
+                return Convert.ToString(o);
+            }
+            else if (type == typeof(int))
+            {
+                return Convert.ToInt32(o);
+            }
+            else if (type == typeof(long))
+            {
+                return Convert.ToInt64(o);
+            }
+            else if (type == typeof(bool))
+            {
+                return Convert.ToBoolean(o);
+            }
+            else
+            {
+                return Activator.CreateInstance(type, new object[] { o });
+            }
+
         }
         public static bool IsList(this object o)
         {
@@ -164,10 +181,10 @@ namespace k8config.Utilities
                             {
                                 if (!removeAttributes.Contains(x.Name))
                                 {
-                                    var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, isList = (x.PropertyType.Name == typeof(IList<>).Name) };
+                                    var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, propertyIsList = (x.PropertyType.Name == typeof(IList<>).Name) };
                                     if (x.GetType().Name != typeof(Nullable).Name || x.GetType().Name != typeof(IList).Name || x.GetType().Name != typeof(IDictionary).Name)
                                     {
-                                        tmpObject.isRequired = true;
+                                        tmpObject.propertyIsRequired = true;
                                     }
                                     tmpAttributes.Add(tmpObject);
                                 }
@@ -176,7 +193,7 @@ namespace k8config.Utilities
                             {
                                 if (!removeAttributes.Contains(x.Name))
                                 {
-                                    tmpAttributes.Add(new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, isList = false, });
+                                    tmpAttributes.Add(new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, propertyIsList = false, });
                                     //kubeObject = x.GetValue(x, null)
                                 }
 
@@ -191,34 +208,38 @@ namespace k8config.Utilities
                         {
                             if (!removeAttributes.Contains(x.Name))
                             {
-                                var tmpObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
+                                var newOptionObject = new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
                                 if (x.IsStringArray())
                                 {
-                                    tmpObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";
-                                    tmpObject.isArray = true;
+                                    newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";
+                                    newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
+                                    newOptionObject.propertyIsArray = true;
                                 }
                                 else if (x.IsList())
                                 {
-                                    tmpObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name}>";
-                                    tmpObject.isList = true;
+                                    newOptionObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name}>";
+                                    newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
+                                    newOptionObject.propertyIsList = true;
                                 }
                                 else if (x.IsDictionary())
                                 {
-                                    tmpObject.displayType = $"Dictionary<{x.PropertyType.GetGenericArguments()[0].Name},{x.PropertyType.GetGenericArguments()[1].Name}>";
-                                    tmpObject.primaryType = x.PropertyType.GetGenericArguments()[1];
-                                    tmpObject.secondaryType = x.PropertyType.GetGenericArguments()[1];
-                                    tmpObject.properyType = x.PropertyType;
-                                    tmpObject.isDictionary = true;
+                                    newOptionObject.displayType = $"Dictionary<{x.PropertyType.GetGenericArguments()[0].Name},{x.PropertyType.GetGenericArguments()[1].Name}>";
+                                    newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
+                                    newOptionObject.secondaryType = x.PropertyType.GetGenericArguments()[1];
+                                    newOptionObject.properyType = x.PropertyType;
+                                    newOptionObject.propertyIsDictionary = true;
                                 }
                                 else if (x.PropertyType.GetGenericArguments().Length > 0)
                                 {
-                                    tmpObject.displayType = x.PropertyType.GetGenericArguments()[0].Name;
+                                    newOptionObject.displayType = x.PropertyType.GetGenericArguments()[0].Name;
+                                    newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                 }
                                 else
                                 {
-                                    tmpObject.displayType = x.PropertyType.Name.Replace("V1", "");
+                                    newOptionObject.displayType = x.PropertyType.Name.Replace("V1", "");
+                                    newOptionObject.propertyIsNamedType = true;
                                 }
-                                tmpAttributes.Add(tmpObject);
+                                tmpAttributes.Add(newOptionObject);
                             }
                         });
                 }

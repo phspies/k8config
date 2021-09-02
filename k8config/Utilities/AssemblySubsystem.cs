@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using k8s.Models;
 
 namespace k8config.Utilities
 {
@@ -38,7 +39,9 @@ namespace k8config.Utilities
         }
         public static IEnumerable<Type> GetAvailableAssemblyList()
         {
-            return AppDomain.CurrentDomain.GetAssemblies().SelectMany(t => t.GetTypes()).Where(t => t.IsClass && t.Namespace == "k8s.Models");
+
+            return Assembly.Load("KubernetesClient").GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
+            //return Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
         }
         public static Type[] LoadType(string typeName)
         {

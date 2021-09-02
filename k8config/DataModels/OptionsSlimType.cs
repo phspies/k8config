@@ -9,11 +9,12 @@ namespace k8config.DataModels
         public string name { get; set;  }
         public object value { get; set; }
         public string displayType { get; set; }
-        public bool isRequired { get; set; }
-        public bool isArray { get; set; }
-        public bool isDictionary { get; set; }
-        public bool isList { get; set; }
-        public bool isCommand { get; set; }
+        public bool propertyIsRequired { get; set; }
+        public bool propertyIsArray { get; set; }
+        public bool propertyIsDictionary { get; set; }
+        public bool propertyIsList { get; set; }
+        public bool propertyIsCommand { get; set; }
+        public bool propertyIsNamedType { get; set; }
         public Type primaryType { get; set; }
         public Type secondaryType { get; set; }
         public Type properyType { get; set; }
@@ -25,11 +26,11 @@ namespace k8config.DataModels
                 returnString += primaryType.IsList() ? $"  List<{displayType}>" : $" [{displayType}]"; 
 
             }
-            if (isCommand)
+            if (propertyIsCommand)
             {
                 returnString += $" ({displayType})";
             }
-            returnString += isRequired ? $" (required)" : "" ;
+            returnString += propertyIsRequired ? $" (required)" : "" ;
             return returnString;
         }
         public string SelectView()

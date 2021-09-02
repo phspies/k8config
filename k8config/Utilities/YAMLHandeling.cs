@@ -18,21 +18,20 @@ namespace k8config.Utilities
     {
         public static void DeserializeFile(string fileLocation)
         { 
-            var input = new StreamReader(fileLocation);
-            var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
-            var reader = new Parser(input);
+            var reader = new Parser(new StreamReader(fileLocation));
             reader.Consume<StreamStart>();
             DocumentStart outdocument;
+            GlobalVariables.sessionDefinedKinds = new List<SessionDefinedKind>();
             int index = 1;
             while (reader.Accept(out outdocument))
             {
-                var tempExpandoObject = deserializer.Deserialize<ExpandoObject>(reader);
+                ExpandoObject tempExpandoObject = (new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build()).Deserialize<ExpandoObject>(reader);
                 if (tempExpandoObject != null)
                 {
                     var dict = (IDictionary<string, object>)tempExpandoObject;
                     if (!String.IsNullOrWhiteSpace(dict["kind"] as string))
                     {
-                        GlobalAssemblyKubeType _type = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind.ToLower() == ((string)dict["kind"]).ToLower());
+                        GlobalAssemblyKubeType _type = GlobalVariables.availableKubeTypes.Find(x => x.kind.ToLower() == ((string)dict["kind"]).ToLower());
                         if (_type != null)
                         {
                             GlobalVariables.sessionDefinedKinds.Add(new SessionDefinedKind()
@@ -45,6 +44,20 @@ namespace k8config.Utilities
                             index++;
                         }
                     }
+                }
+            }
+        }
+        public static void SerializeToFile(string filePath)
+        {
+            var serializer = new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull).Build();
+            GlobalVariables.sessionDefinedKinds.Select(x => x.KubeObject);
+            using (StreamWriter sw = new StreamWriter(filePath))
+            {
+                foreach (object _kubeobject in GlobalVariables.sessionDefinedKinds.Select(x => x.KubeObject))
+                {
+                    serializer.Serialize(sw, _kubeobject);
+                    if (!_kubeobject.Equals(GlobalVariables.sessionDefinedKinds.Last().KubeObject))
+                        sw.WriteLine("---");
                 }
             }
         }
