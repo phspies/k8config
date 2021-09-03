@@ -12,7 +12,7 @@ namespace k8config
     partial class Program
     {
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { topLevelWindowObject.Running = false; }}),
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode())
             };
         static Window ReatimeModeWindow = new Window()

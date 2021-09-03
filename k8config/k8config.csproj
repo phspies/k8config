@@ -6,8 +6,16 @@
     <StartupObject>k8config.Program</StartupObject>
 	<Nullable>disable</Nullable>
 	<ApplicationIcon>Kubernetes Configurator Toolkit Logo.ico</ApplicationIcon>
+      <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="ReadLine\**" />
     <EmbeddedResource Remove="ReadLine\**" />
@@ -22,7 +30,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Data\k8help.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

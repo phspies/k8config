@@ -21,8 +21,10 @@ namespace k8config
                 if (GlobalVariables.sessionDefinedKinds.Count() == 0)
                 {
                     tmpAvailableOptions = new List<OptionsSlimType>() {
-                            new OptionsSlimType() { name = "new" },
-                            new OptionsSlimType() { name = "exit" }
+                            new OptionsSlimType() { name = "new" ,propertyIsCommand = true, displayType = "create new object" },
+                            new OptionsSlimType() { name = "exit" ,propertyIsCommand = true, displayType = "exit" },
+                            new OptionsSlimType() { name = "import" ,propertyIsCommand = true, displayType = "Import YAML file" },
+                            new OptionsSlimType() { name = "export" ,propertyIsCommand = true, displayType = "Export to YAML file" },
                         };
                 }
                 else
@@ -32,6 +34,8 @@ namespace k8config
                             new OptionsSlimType() { name = "delete",propertyIsCommand = true, displayType = "delete object" },
                             new OptionsSlimType() { name = "select",propertyIsCommand = true, displayType = "select object" },
                             new OptionsSlimType() { name = "list" ,propertyIsCommand = true, displayType = "list current objects" },
+                            new OptionsSlimType() { name = "import" ,propertyIsCommand = true, displayType = "Import YAML file" },
+                            new OptionsSlimType() { name = "export" ,propertyIsCommand = true, displayType = "Export to YAML file" },
                             new OptionsSlimType() { name = "exit",propertyIsCommand = true, displayType = "exit" },
                         };
                     UpdateAvailableOptions();

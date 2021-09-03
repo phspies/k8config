@@ -35,7 +35,7 @@ namespace k8config
         static Label messageBarItem = new Label();
         static KubernetesHelp kubeHelp = new KubernetesHelp();
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { topLevelWindowObject.Running = false; }}),
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ Import", () => {
                     Import();
                     updateAvailableKindsList();

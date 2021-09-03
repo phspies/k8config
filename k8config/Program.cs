@@ -14,6 +14,7 @@ namespace k8config
 
         static void Main(string[] args)
         {
+            Application.UseSystemConsole = true;
             Application.Init();
             AssemblySubsystem.BuildAvailableAssemblyList();
 

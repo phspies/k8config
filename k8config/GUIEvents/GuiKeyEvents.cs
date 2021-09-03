@@ -56,7 +56,7 @@ namespace k8config
                 string currentInputText = commandPromptTextField.Text.ToString();
                 if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(currentInputText))
                 {
-                   currentavailableListUpDown = false;
+                    currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
                     string[] args = currentInputText.Split();
                     if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
@@ -183,6 +183,18 @@ namespace k8config
                             string[] args = currentInputText.Trim().Split();
                             if (args.Length > 1)
                             {
+                                if (args[0] == "import")
+                                {
+                                    if (!string.IsNullOrWhiteSpace(args[1]))
+                                    {
+
+                                    }
+                                }
+                                if (args[0] == "export")
+                                {
+
+                                }
+
                                 if (args[0] == "new")
                                 {
                                     if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
