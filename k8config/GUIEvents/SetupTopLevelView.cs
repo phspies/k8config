@@ -42,11 +42,12 @@ namespace k8config
 
                 if (GlobalVariables.displayMode == 0)
                 {
-                    availableKindsWindow.Width = 50;
+                    availableKindsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.30);
                     definedYAMLWindow.X = availableKindsWindow.Bounds.Right;
+                    definedYAMLWindow.Height = availableKindsWindow.Bounds.Height;
                     commandWindow.Y = topLevelWindowObject.Bounds.Height - 5;
                     descriptionWindow.X = 0;
-                    descriptionWindow.Y = definedYAMLWindow.Bounds.Bottom;
+                    descriptionWindow.Y = availableKindsWindow.Bounds.Bottom;
                 }
                 else if (GlobalVariables.displayMode == 1)
                 {

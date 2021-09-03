@@ -56,7 +56,7 @@ namespace k8config
                 X = 0,
                 Y = 0,
                 Width = 50,
-                Height = Dim.Fill() - 10,
+                Height = Dim.Fill() - 9,
                 TabStop = false,
                 CanFocus = false,
                 ColorScheme = colorNormal,
@@ -66,7 +66,7 @@ namespace k8config
             {
                 Title = "Description",
                 X = 0,
-                Y = definedYAMLWindow.Bounds.Bottom,
+                Y = availableKindsWindow.Bounds.Bottom,
                 Width = Dim.Fill(),
                 Height = 5,
                 TabStop = false,
