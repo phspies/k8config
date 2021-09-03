@@ -47,7 +47,7 @@ namespace k8config
         }
         static void UpdateDescriptionView(string _nestedObject = null)
         {
-            descriptionView.Text = kubeHelp.getCurrentObjectHelp(_nestedObject);
+                descriptionView.Text = kubeHelp.getCurrentObjectHelp(_nestedObject);
         }
     }
 }

@@ -21,6 +21,7 @@ namespace k8config
         }
         public string getCurrentObjectHelp(string _nestedProperty = null)
         {
+
             string description = "";
             DescriptionType _prop = new DescriptionType();
             definitions = K8HelpObject.SelectToken("definitions");
@@ -50,22 +51,28 @@ namespace k8config
                     {
                         continue;
                     }
+                    tempHelpObject = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == GlobalVariables.promptArray[i].ToLower());
+                    if (!string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
+                    {
+                        description = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
+                    }
                     else
                     {
-                        tempHelpObject = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == GlobalVariables.promptArray[i].ToLower());
-                        if (!string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
-                        {
-                            description = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
-                        }
-                        else
-                        {
-                            description = tempHelpObject.description;
-                        }
+                        description = tempHelpObject.description;
                     }
                 }
 
             }
-            return description;
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(_nestedProperty))
+                {
+                    var _property = (JToken)definitions.Children().FirstOrDefault(x => (x.First["x-kubernetes-group-version-kind"]["kind"]?.Value<string>() == _nestedProperty))?.Select(x => x).First().Parent;
+                    description = _property?.First["description"]?.Value<string>();
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(description) ? "Description not found" : description;
         }
 
         public List<DescriptionType> BuildPropTree(JToken _json)
@@ -81,6 +88,7 @@ namespace k8config
                     _prop.name = ((JProperty)node).Name;
                     if (required != null) { _prop.required = (bool)required?.Any(x => x == ((JProperty)node).Name); }
                     _prop.description = (string)(node.First["description"]);
+                    _prop.type = (string)(node.First["type"]);
                     _proptree.Add(_prop);
                     var _ref = node.First["$ref"];
                     if (node.First["$ref"] == null)
@@ -103,5 +111,5 @@ namespace k8config
             return _proptree;
         }
     }
-   
+
 }

@@ -54,11 +54,12 @@ namespace k8config
             commandPromptTextField.KeyPress += (e) =>
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
+                string[] args = currentInputText.Trim().Split();
                 if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(currentInputText))
                 {
                     currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
-                    string[] args = currentInputText.Split();
+    
                     if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
                     {
                         if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1];
@@ -69,7 +70,7 @@ namespace k8config
                     }
                     else if (args.Count() == 1 && args[0] != "")
                     {
-                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[0];
+                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[0].Trim();
                         possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
                         availableKindsListView.SetSource(possibleOptions.ToList());
                         commandPromptTextField.Text = $"{NextAutoComplete(possibleOptions)}";
@@ -81,6 +82,7 @@ namespace k8config
                         autoCompleteInterruptText = "";
                         possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x => x.TableView()).ToList();
                         availableKindsListView.SetSource(possibleOptions.ToList());
+
                     }
                     e.Handled = true;
                 }
@@ -95,16 +97,19 @@ namespace k8config
             commandPromptTextField.KeyUp += (e) =>
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
-                if (KubeObject.GetCurrentObject().GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == currentInputText.ToLower()))
+                string[] args = currentInputText.Trim().Split();
+                if (KubeObject.GetCurrentObject().GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
                 {
-                    UpdateDescriptionView(currentInputText);
+                    UpdateDescriptionView(args[0]);
+                }
+                else if (args.Length == 2 && args[0] == "new" && GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
+                {
+                    UpdateDescriptionView(args[1]);
                 }
                 else
                 {
                     UpdateDescriptionView();
                 }
-
-
                 if (e.KeyEvent.Key == Key.Enter)
                 {
                     if (!string.IsNullOrEmpty(currentInputText))
@@ -180,7 +185,6 @@ namespace k8config
                         else
                         {
                             //inline type commands
-                            string[] args = currentInputText.Trim().Split();
                             if (args.Length > 1)
                             {
                                 if (args[0] == "import")

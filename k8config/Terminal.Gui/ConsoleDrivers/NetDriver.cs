@@ -1955,7 +1955,7 @@ namespace Terminal.Gui {
 
 			try {
 				if (!tokenSource.IsCancellationRequested) {
-					keyReady.Wait (waitTimeout, tokenSource.Token);
+				keyReady.Wait (waitTimeout, tokenSource.Token);
 				}
 			} catch (OperationCanceledException) {
 				return true;
