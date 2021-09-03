@@ -89,7 +89,6 @@ namespace k8config
                 else
                 {
                     autoCompleteInterruptText = "";
-                    UpdateDescriptionView();
 
                 }
 
@@ -98,18 +97,6 @@ namespace k8config
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
                 string[] args = currentInputText.Trim().Split();
-                if (KubeObject.GetCurrentObject().GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
-                {
-                    UpdateDescriptionView(args[0]);
-                }
-                else if (args.Length == 2 && args[0] == "new" && GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
-                {
-                    UpdateDescriptionView(args[1]);
-                }
-                else
-                {
-                    UpdateDescriptionView();
-                }
                 if (e.KeyEvent.Key == Key.Enter)
                 {
                     if (!string.IsNullOrEmpty(currentInputText))
@@ -191,12 +178,28 @@ namespace k8config
                                 {
                                     if (!string.IsNullOrWhiteSpace(args[1]))
                                     {
-
+                                        try
+                                        {
+                                            YAMLHandeling.DeserializeFile(args[1]);
+                                            messageBarItem.Text = $"YAML file loaded with {GlobalVariables.sessionDefinedKinds.Count()} definitions";
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            messageBarItem.Text = $"Error loading YAML file {args[1]} - {ex.Message}";
+                                        }
                                     }
                                 }
                                 if (args[0] == "export")
                                 {
-
+                                    try
+                                    {
+                                        YAMLHandeling.SerializeToFile(args[1]);
+                                        messageBarItem.Text = $"YAML file writen to {args[1]}";
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        messageBarItem.Text = $"Error writing YAML to file {args[1]} - {ex.Message}";
+                                    }
                                 }
 
                                 if (args[0] == "new")
@@ -441,6 +444,20 @@ namespace k8config
 
                 }
                 updateAvailableKindsList();
+                currentInputText = commandPromptTextField.Text.ToString();
+                args = currentInputText.Trim().Split();
+                if (KubeObject.GetCurrentObject().GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
+                {
+                    UpdateDescriptionView(args[0]);
+                }
+                else if (args.Length == 2 && args[0] == "new" && GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
+                {
+                    UpdateDescriptionView(args[1]);
+                }
+                else
+                {
+                    UpdateDescriptionView();
+                }
                 //repositionCommandInput();
                 //drawYAML();
             };
