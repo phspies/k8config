@@ -10,7 +10,6 @@ namespace k8config
 {
     partial class Program
     {
-
         static Window InteractiveModeWindow = new Window()
         {
             Border = new Border()
@@ -32,21 +31,16 @@ namespace k8config
         static ListView definedYAMLListView = new ListView();
         static Window descriptionWindow = new Window();
         static TextView descriptionView = new TextView();
-        static Label messageBarItem = new Label();
+        //static Label messageBarItem = new Label();
         static KubernetesHelp kubeHelp = new KubernetesHelp();
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
-                new StatusItem(Key.F2, "~F2~ Import", () => {
-                    Import();
-                    updateAvailableKindsList();
-                }),
-                new StatusItem(Key.F3, "~F3~ Export", () => Export()),
-                new StatusItem(Key.F10, "~F10~ Interactive Mode", () => ToggleDisplayMode())
+                new StatusItem(Key.F10, "~F10~ Interactive Mode", () => ToggleDisplayMode()),
+               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.Red, Color.DarkGray))
             };
+        
         static public void InteractiveYAMLMode()
         {
-
-
             statusBar = new StatusBar(interactiveStatusBarItems);
             topLevelWindowObject.Add(statusBar);
 
@@ -109,7 +103,9 @@ namespace k8config
                 Y = descriptionWindow.Bounds.Bottom,
                 Width = Dim.Fill(),
                 Height = 4,
-                ColorScheme = colorNormal
+                ColorScheme = colorNormal,
+                TabStop = false,
+                CanFocus = false,
             };
 
 
@@ -143,18 +139,19 @@ namespace k8config
             };
 
             availableKindsWindow.Add(availableKindsListView);
-            messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
-            messageBarItem.Width = Dim.Fill();
-            messageBarItem.Text = "No definitions found";
-            messageBarItem.CanFocus = false;
-            messageBarItem.Y = 1;
-            messageBarItem.X = 1;
+            //messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
+            //messageBarItem.Width = Dim.Fill();
+            //displayMessageStatusBar("No definitions found";
+            //messageBarItem.CanFocus = false;
+            //messageBarItem.Y = 1;
+            //messageBarItem.X = 1;
+            //displayMessageStatusBar("No definitions found";
 
 
             InteractiveModeWindow.Add(commandWindow, definedYAMLWindow);
             InteractiveModeWindow.Add(availableKindsWindow);
 
-            commandWindow.Add(messageBarItem);
+            //commandWindow.Add(messageBarItem);
             descriptionWindow.Add(descriptionView);
             InteractiveModeWindow.Add(descriptionWindow);
             commandWindow.Add(commandPromptLabel, commandPromptTextField);

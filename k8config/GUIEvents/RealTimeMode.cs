@@ -13,7 +13,8 @@ namespace k8config
     {
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
-                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode())
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                 new StatusItem (Key.CharMask, "No connection Found", null)
             };
         static Window ReatimeModeWindow = new Window()
         {

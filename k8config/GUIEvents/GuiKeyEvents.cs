@@ -141,7 +141,7 @@ namespace k8config
                             }
                             else
                             {
-                                messageBarItem.Text = "The current object is not a list";
+                                updateMessageBar("The current object is not a list");
                             }
                             definedYAMLListView.SetSourceAsync(outputList);
                         }
@@ -162,7 +162,7 @@ namespace k8config
                                     {
                                         currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListTypes[0]) });
                                     }
-                                    messageBarItem.Text = $"{selectListTypes[0].Name} added to {GlobalVariables.promptArray.Last()}";
+                                    updateMessageBar($"{selectListTypes[0].Name} added to {GlobalVariables.promptArray.Last()}");
                                     AddToPrompt(KubeObject.GetNestedList(currentObject).Last().index.ToString());
                                 }
                                 repositionCommandInput();
@@ -181,11 +181,12 @@ namespace k8config
                                         try
                                         {
                                             YAMLHandeling.DeserializeFile(args[1]);
-                                            messageBarItem.Text = $"YAML file loaded with {GlobalVariables.sessionDefinedKinds.Count()} definitions";
+                                            updateAvailableKindsList();
+                                            updateMessageBar($"YAML file loaded with {GlobalVariables.sessionDefinedKinds.Count()} definitions");
                                         }
                                         catch (Exception ex)
                                         {
-                                            messageBarItem.Text = $"Error loading YAML file {args[1]} - {ex.Message}";
+                                            updateMessageBar($"Error loading YAML file {args[1]} - {ex.Message}");
                                         }
                                     }
                                 }
@@ -194,11 +195,11 @@ namespace k8config
                                     try
                                     {
                                         YAMLHandeling.SerializeToFile(args[1]);
-                                        messageBarItem.Text = $"YAML file writen to {args[1]}";
+                                        updateMessageBar($"YAML file writen to {args[1]}");
                                     }
                                     catch (Exception ex)
                                     {
-                                        messageBarItem.Text = $"Error writing YAML to file {args[1]} - {ex.Message}";
+                                        updateMessageBar($"Error writing YAML to file {args[1]} - {ex.Message}");
                                     }
                                 }
 
@@ -224,7 +225,7 @@ namespace k8config
                                         };
                                         GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
                                         AddToPrompt(newSessionKind.index.ToString());
-                                        messageBarItem.Text = $"{newSessionKind.kind} created and selected";
+                                        updateMessageBar($"{newSessionKind.kind} created and selected");
                                         repositionCommandInput();
                                         paintYAML();
                                     }
@@ -246,7 +247,7 @@ namespace k8config
                                         }
                                         else
                                         {
-                                            messageBarItem.Text = $"wrong amount of variables supplied. {selectListTypes.Length} variables expected";
+                                            updateMessageBar($"wrong amount of variables supplied. {selectListTypes.Length} variables expected");
                                         }
                                         repositionCommandInput();
                                         paintYAML();
@@ -262,31 +263,31 @@ namespace k8config
                                             if (KubeObject.DoesRootIndexExist(index))
                                             {
                                                 var selectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index);
-                                                messageBarItem.Text = $"{selectedKind.kind} selected";
+                                                updateMessageBar($"{selectedKind.kind} selected");
                                                 AddToPrompt(index.ToString());
                                                 repositionCommandInput();
                                                 paintYAML();
                                             }
                                             else
                                             {
-                                                messageBarItem.Text = "Item not found";
+                                                updateMessageBar("Item not found");
                                             }
                                         }
                                         else if (KubeObject.DoesNestedIndexExist(KubeObject.GetCurrentObject(), index))
                                         {
-                                            messageBarItem.Text = $"{index} selected";
+                                            updateMessageBar($"{index} selected");
                                             AddToPrompt(index.ToString());
                                             repositionCommandInput();
                                             paintYAML();
                                         }
                                         else
                                         {
-                                            messageBarItem.Text = $"{index} not found";
+                                            updateMessageBar($"{index} not found");
                                         }
                                     }
                                     else
                                     {
-                                        messageBarItem.Text = $"Value [{args[1]}] entered is not a integer";
+                                        updateMessageBar($"Value [{args[1]}] entered is not a integer");
                                     }
                                 }
                                 else if (args[0] == "delete")
@@ -297,7 +298,7 @@ namespace k8config
                                         if (GlobalVariables.promptArray.Count() == 1 && GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
                                         {
                                             GlobalVariables.sessionDefinedKinds.Remove(GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index));
-                                            messageBarItem.Text = "Definition deleted";
+                                            updateMessageBar("Definition deleted");
                                             repositionCommandInput();
                                             paintYAML();
                                         }
@@ -308,12 +309,12 @@ namespace k8config
                                         }
                                         else
                                         {
-                                            messageBarItem.Text = "Item not found";
+                                            updateMessageBar("Item not found");
                                         }
                                     }
                                     else
                                     {
-                                        messageBarItem.Text = "Value entered is not a integer";
+                                        updateMessageBar("Value entered is not a integer");
                                     }
                                 }
                                 else if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == args[0] && !x.propertyIsList))
@@ -364,7 +365,7 @@ namespace k8config
                                             else
                                             {
 
-                                                messageBarItem.Text = $"Don't know how to cast value {args[1]} to type {propertyType.Name}";
+                                                updateMessageBar($"Don't know how to cast value {args[1]} to type {propertyType.Name}");
 
                                             }
                                         }
@@ -372,11 +373,11 @@ namespace k8config
                                         {
                                             if (ex.InnerException != null)
                                             {
-                                                messageBarItem.Text = $"{args[1]} cannot be casted ({ex.InnerException.Message})";
+                                                updateMessageBar($"{args[1]} cannot be casted ({ex.InnerException.Message})");
                                             }
                                             else
                                             {
-                                                messageBarItem.Text = $"{args[1]} cannot be casted ({ex.Message})";
+                                                updateMessageBar($"{args[1]} cannot be casted ({ex.Message})");
                                             }
                                         }
                                     }
@@ -384,7 +385,7 @@ namespace k8config
                                 }
                                 else
                                 {
-                                    messageBarItem.Text = "Command not found";
+                                    updateMessageBar("Command not found");
                                 }
                             }
                             else
@@ -400,7 +401,7 @@ namespace k8config
                                         Type currentObjectType = Nullable.GetUnderlyingType(currentProperty.PropertyType) != null ? Nullable.GetUnderlyingType(currentProperty.PropertyType) : currentProperty.PropertyType;
                                         if (currentObjectType.IsPrimitive || (currentObjectType == typeof(String)) || currentKubeObject.propertyIsArray || currentKubeObject.propertyIsDictionary)
                                         {
-                                            messageBarItem.Text = $"({currentInputText}) requires a value of type {currentKubeObject.displayType}";
+                                            updateMessageBar($"({currentInputText}) requires a value of type {currentKubeObject.displayType}");
                                         }
                                         else
                                         {
@@ -433,7 +434,7 @@ namespace k8config
 
                                 else
                                 {
-                                    messageBarItem.Text = "Command not found";
+                                    updateMessageBar("Command not found");
                                 }
                             }
                         }

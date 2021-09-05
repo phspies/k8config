@@ -18,11 +18,11 @@ namespace k8config
                 try
                 {
                     YAMLHandeling.SerializeToFile(d.FilePath.ToString());
-                    messageBarItem.Text = $"YAML file writen to {d.FilePath}";
+                    updateMessageBar($"YAML file writen to {d.FilePath}");
                 }
                 catch (Exception ex)
                 {
-                    messageBarItem.Text = $"Error writing YAML to file {d.FilePath} - {ex.Message}";
+                    updateMessageBar($"Error writing YAML to file {d.FilePath} - {ex.Message}");
                 }
             }
         }

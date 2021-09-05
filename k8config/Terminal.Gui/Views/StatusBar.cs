@@ -8,6 +8,8 @@
 //   Add mouse support
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using NStack;
 
 namespace Terminal.Gui {
@@ -27,11 +29,13 @@ namespace Terminal.Gui {
 		/// <param name="shortcut">Shortcut to activate the <see cref="StatusItem"/>.</param>
 		/// <param name="title">Title for the <see cref="StatusItem"/>.</param>
 		/// <param name="action">Action to invoke when the <see cref="StatusItem"/> is activated.</param>
-		public StatusItem (Key shortcut, ustring title, Action action)
+		public StatusItem (Key shortcut, ustring title, Action action, bool messageItem = false, Attribute messageAttribute = new Attribute())
 		{
 			Title = title ?? "";
 			Shortcut = shortcut;
 			Action = action;
+			MessageItem = messageItem;
+			MessageAttribute = messageAttribute;
 		}
 
 		/// <summary>
@@ -55,6 +59,8 @@ namespace Terminal.Gui {
 		/// </summary>
 		/// <value>Action to invoke.</value>
 		public Action Action { get; }
+		public bool MessageItem { get; }
+		public Attribute MessageAttribute { get; }
 	};
 
 	/// <summary>
@@ -94,6 +100,13 @@ namespace Terminal.Gui {
 			Initialized += StatusBar_Initialized;
 			Application.Resized += Application_Resized ();
 		}
+		public void UpdateMessageText(string _message)
+        {
+			if (Items.ToList().Exists(x => x.MessageItem))
+            {
+				Items.ToList().FirstOrDefault(x => x.MessageItem).Title = _message;
+			}
+        }
 
 		private void StatusBar_Initialized (object sender, EventArgs e)
 		{
@@ -167,13 +180,19 @@ namespace Terminal.Gui {
 						scheme = ToggleScheme (scheme);
 						continue;
 					}
+					if (Items[i].MessageItem)
+					{
+						Driver.SetAttribute(Items[i].MessageAttribute);
+					}
 					Driver.AddRune (title [n]);
 				}
+
 				if (i + 1 < Items.Length) {
 					Driver.AddRune (' ');
 					Driver.AddRune (Driver.VLine);
 					Driver.AddRune (' ');
 				}
+	
 			}
 		}
 

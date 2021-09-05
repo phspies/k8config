@@ -51,7 +51,7 @@ namespace k8config
                 }
                 else if (GlobalVariables.displayMode == 1)
                 {
-                    //realtime events
+                    //redraw events
                 }
             };
         }

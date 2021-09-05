@@ -7,6 +7,7 @@ namespace k8config.DataModels
     {
         public int index { get; set; }
         public string name { get; set;  }
+
         public object value { get; set; }
         public string displayType { get; set; }
         public bool propertyIsRequired { get; set; }

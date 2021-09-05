@@ -208,7 +208,8 @@ namespace k8config.Utilities
                         {
                             if (!removeAttributes.Contains(x.Name))
                             {
-                                var newOptionObject = new OptionsSlimType() { name = x.GetCustomAttribute<JsonPropertyAttribute>().PropertyName, primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
+                                var newOptionObject = new OptionsSlimType() { name = x.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName, primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
+
                                 if (x.IsStringArray())
                                 {
                                     newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";

@@ -19,11 +19,11 @@ namespace k8config
                 try
                 {
                     YAMLHandeling.DeserializeFile(d.FilePath.ToString());
-                    messageBarItem.Text = $"YAML file loaded with {GlobalVariables.sessionDefinedKinds.Count()} definitions";
+                    updateMessageBar($"YAML file loaded with {GlobalVariables.sessionDefinedKinds.Count()} definitions");
                 }
                 catch (Exception ex)
                 {
-                    messageBarItem.Text = $"Error loading YAML file {d.FilePath} - {ex.Message}";
+                    updateMessageBar($"Error loading YAML file {d.FilePath} - {ex.Message}");
                 }
             }
         }

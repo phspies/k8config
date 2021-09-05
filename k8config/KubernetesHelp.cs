@@ -16,7 +16,7 @@ namespace k8config
         JToken K8HelpObject;
         JToken definitions;
         int? currentIndexObject;
-        DescriptionType _prop;
+        DescriptionType descriptionObject;
         public KubernetesHelp()
         {
             var reader = new StreamReader(new MemoryStream(Properties.Resources.k8help), Encoding.Default);
@@ -30,31 +30,27 @@ namespace k8config
            
             if (GlobalVariables.promptArray.Count > 1)
             {
-                if (currentIndexObject == null || currentIndexObject != int.Parse(GlobalVariables.promptArray[1]))
+                var currentRoot = GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
+                if (currentIndexObject == null || currentIndexObject != int.Parse(GlobalVariables.promptArray[1]) || descriptionObject.name != currentRoot.kind)
                 {
                     currentIndexObject = int.Parse(GlobalVariables.promptArray[1]);
-                    _prop = new DescriptionType();
-                    var currentRoot = GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
-                    //var found = definitions.Children().FirstOrDefault(x => ((x as JProperty).Name.Contains(currentRoot.kind))).Select(x => x);
-                    //var _property = (JToken)found.First().Parent;
-
+                    descriptionObject = new DescriptionType();
                     var _property = ((JToken)definitions).SelectTokens($"$..x-kubernetes-group-version-kind[?(@.kind == '{currentRoot.kind}')]")?.First().Parent.Parent.Parent.Parent.First.Parent;
-
-                    _prop.name = ((JProperty)_property).Name;
-                    _prop.description = _property.First["description"]?.Value<string>();
-                    _prop.properties = BuildPropTree(_property.First);
+                    descriptionObject.name = ((JProperty)_property).Name.Split(".").Last();
+                    descriptionObject.description = _property.First["description"]?.Value<string>();
+                    descriptionObject.properties = BuildPropTree(_property.First);
                 }
                 if (GlobalVariables.promptArray.Count == 2)
                 {
-                    description = _prop.description;
-                    if (!string.IsNullOrWhiteSpace(_nestedProperty) && _prop.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
+                    description = descriptionObject.description;
+                    if (!string.IsNullOrWhiteSpace(_nestedProperty) && descriptionObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
                     {
-                        description = _prop.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
+                        description = descriptionObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
                     }
                 }
                 else
                 {
-                    DescriptionType tempHelpObject = _prop.Clone();
+                    DescriptionType tempHelpObject = descriptionObject.Clone();
                     for (int i = 2; GlobalVariables.promptArray.Count > i; i++)
                     {
                         if (Int16.TryParse(GlobalVariables.promptArray[i], out _))
@@ -64,16 +60,19 @@ namespace k8config
                         tempHelpObject = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower().Equals(GlobalVariables.promptArray[i].ToLower()));
                         if (tempHelpObject == null)
                         {
-                            tempHelpObject = tempHelpObject.properties.FirstOrDefault(x => x.name.Contains(GlobalVariables.promptArray[i].ToLower()));
-                        }
-                        if (!string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject != null && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
-                        {
-                            description = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
+                            description = "";
                         }
                         else
                         {
-                            description = (tempHelpObject == null) ? $"{GlobalVariables.promptArray[i].ToLower()} not found in help resource" : tempHelpObject.description;                            
-                        }                        
+                            if (!string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject != null && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
+                            {
+                                description = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
+                            }
+                            else
+                            {
+                                description = (tempHelpObject == null) ? $"{GlobalVariables.promptArray[i].ToLower()} not found in help resource" : tempHelpObject.description;
+                            }
+                        }
                     }
                 }
 
