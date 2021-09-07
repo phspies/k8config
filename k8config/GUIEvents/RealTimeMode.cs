@@ -16,6 +16,8 @@ namespace k8config
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
                  new StatusItem (Key.CharMask, "No connection Found", null)
             };
+        static Window availableContextsWindow = new Window();
+        static ListView availableContextsListView = new ListView();
         static Window ReatimeModeWindow = new Window()
         {
             Border = new Border()
@@ -25,39 +27,57 @@ namespace k8config
                 Effect3D = false,
             },
             Width = Dim.Fill(),
-            Height = Dim.Fill()
+            Height = Dim.Fill(),
+            Visible = false,
+            TabStop = false,
+            CanFocus = false,
         };
         static public void RealTimeMode()
         {
             topLevelWindowObject.Add(InteractiveModeWindow);
+            statusBar = new StatusBar(realtimeStatusBarItems);
+            topLevelWindowObject.Add(statusBar);
+
+            availableContextsWindow = new Window()
+            {
+                Title = "Available Contexts",
+                X = 0,
+                Y = 0,
+                Width = 30,
+                Height = Dim.Fill() - 9,
+                TabStop = false,
+                CanFocus = false,
+                ColorScheme = colorNormal,
+
+            };
+            availableContextsListView = new ListView()
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                AllowsMultipleSelection = false,
+                AllowsMarking = false,
+                CanFocus = true,
+                TabStop = true,
+                ColorScheme = colorSelector
+            };
+            
+            ReatimeModeWindow.Add(availableContextsWindow);
+            availableContextsWindow.Add(availableContextsListView);
+            topLevelWindowObject.Add(ReatimeModeWindow);
 
             var config = KubernetesClientConfiguration.LoadKubeConfig();
+            
+            availableContextsListView.SetSource(config.Contexts.Select(x => x.Name).ToList());
+
+
             //.BuildConfigFromConfigFile();
             //config.SkipTlsVerify = true;
             //var config = new KubernetesClientConfiguration { Host = "http://127.0.0.1:8000" };
             //var client = new Kubernetes(config);
             //var namespaces = client.ListNamespace();
         }
-        static public void ToggleDisplayMode()
-        {
-            if (GlobalVariables.displayMode == 0)
-            {
-                GlobalVariables.displayMode = 1;
-                InteractiveModeWindow.Visible = false;
-                //topLevelWindowObject.Remove(statusBar);
-                statusBar.Items = realtimeStatusBarItems;
-                ReatimeModeWindow.Visible = true;
-                //topLevelWindowObject.Add(statusBar);
-            }
-            else
-            {
-                GlobalVariables.displayMode = 0;
-                InteractiveModeWindow.Visible = true;
-                ReatimeModeWindow.Visible = false;
-                //topLevelWindowObject.Remove(statusBar);
-                statusBar.Items = interactiveStatusBarItems;
-                //topLevelWindowObject.Add(statusBar);
-            }
-        }
+        
     }
 }
