@@ -16,13 +16,13 @@ namespace k8config
                 GlobalVariables.displayMode = 1;
                 InteractiveModeWindow.Visible = false;
                 statusBar.Items = realtimeStatusBarItems;
-                ReatimeModeWindow.Visible = true;
+                realtimeModeWindow.Visible = true;
             }
             else
             {
                 GlobalVariables.displayMode = 0;
                 InteractiveModeWindow.Visible = true;
-                ReatimeModeWindow.Visible = false;
+                realtimeModeWindow.Visible = false;
                 statusBar.Items = interactiveStatusBarItems;
             }
         }

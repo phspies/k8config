@@ -14,9 +14,9 @@ namespace k8config
 {
     partial class Program
     {
-        static public void SetupKeyEvents()
+        static public void YamlModeKeyEvents()
         {
-            topLevelWindowObject.KeyUp += (e) =>
+            InteractiveModeWindow.KeyUp += (e) =>
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
                 if (e.KeyEvent.Key == Key.CursorDown || e.KeyEvent.Key == Key.CursorUp)

@@ -2,6 +2,7 @@
 using k8config.Utilities;
 using k8s;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Terminal.Gui;
 
 namespace k8config
@@ -14,14 +15,17 @@ namespace k8config
 
         static void Main(string[] args)
         {
-            Application.UseSystemConsole = true;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Application.UseSystemConsole = true;
+            }
             Application.Init();
             AssemblySubsystem.BuildAvailableAssemblyList();
 
             SetupTopLevelView();
             InteractiveYAMLMode();
             RealTimeMode();
-            SetupKeyEvents();
+            YamlModeKeyEvents();
 
             updateAvailableKindsList();
 

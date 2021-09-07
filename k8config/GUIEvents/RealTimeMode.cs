@@ -14,11 +14,12 @@ namespace k8config
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                 new StatusItem (Key.CharMask, "No connection Found", null)
+                 new StatusItem (Key.CharMask, "No connection selected", null)
             };
         static Window availableContextsWindow = new Window();
         static ListView availableContextsListView = new ListView();
-        static Window ReatimeModeWindow = new Window()
+        static Window selectedContextsWindow = new Window();
+        static Window realtimeModeWindow = new Window()
         {
             Border = new Border()
             {
@@ -50,6 +51,17 @@ namespace k8config
                 ColorScheme = colorNormal,
 
             };
+            selectedContextsWindow = new Window()
+            {
+                Title = "Selected Context",
+                X = availableContextsWindow.Bounds.Bottom,
+                Y = 0,
+                Width = 30,
+                Height = Dim.Fill(),
+                TabStop = false,
+                CanFocus = false,
+                ColorScheme = colorNormal,
+            };
             availableContextsListView = new ListView()
             {
                 X = 0,
@@ -63,13 +75,20 @@ namespace k8config
                 ColorScheme = colorSelector
             };
             
-            ReatimeModeWindow.Add(availableContextsWindow);
+            realtimeModeWindow.Add(availableContextsWindow);
+            realtimeModeWindow.Add(selectedContextsWindow);
             availableContextsWindow.Add(availableContextsListView);
-            topLevelWindowObject.Add(ReatimeModeWindow);
-
-            var config = KubernetesClientConfiguration.LoadKubeConfig();
-            
-            availableContextsListView.SetSource(config.Contexts.Select(x => x.Name).ToList());
+            topLevelWindowObject.Add(realtimeModeWindow);
+            try
+            {
+                var config = KubernetesClientConfiguration.LoadKubeConfig();
+                availableContextsListView.SetSource(config.Contexts.Select(x => x.Name).ToList());
+            }
+            catch (Exception ex)
+            {
+                updateMessageBar(ex.Message);
+            }
+            realtimeModeKeyEvents();
 
 
             //.BuildConfigFromConfigFile();
