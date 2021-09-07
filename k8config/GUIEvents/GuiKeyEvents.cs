@@ -190,7 +190,7 @@ namespace k8config
                                         }
                                     }
                                 }
-                                if (args[0] == "export")
+                                else if (args[0] == "export")
                                 {
                                     try
                                     {
@@ -203,7 +203,7 @@ namespace k8config
                                     }
                                 }
 
-                                if (args[0] == "new")
+                                else if (args[0] == "new")
                                 {
                                     if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
                                     {

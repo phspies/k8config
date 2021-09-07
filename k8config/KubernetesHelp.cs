@@ -23,11 +23,11 @@ namespace k8config
             K8HelpObject = JObject.ReadFrom(new JsonTextReader(reader));
             definitions = K8HelpObject.SelectToken("definitions");
         }
-        public string getCurrentObjectHelp(string _nestedProperty = null)
+        public DescriptionType getCurrentObjectHelp(string _nestedProperty = null)
         {
 
-            string description = "";
-           
+            DescriptionType returnObject = new DescriptionType();
+
             if (GlobalVariables.promptArray.Count > 1)
             {
                 var currentRoot = GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1]));
@@ -42,10 +42,10 @@ namespace k8config
                 }
                 if (GlobalVariables.promptArray.Count == 2)
                 {
-                    description = descriptionObject.description;
+                    returnObject = descriptionObject;
                     if (!string.IsNullOrWhiteSpace(_nestedProperty) && descriptionObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
                     {
-                        description = descriptionObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
+                        returnObject = descriptionObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower());
                     }
                 }
                 else
@@ -58,20 +58,10 @@ namespace k8config
                             continue;
                         }
                         tempHelpObject = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower().Equals(GlobalVariables.promptArray[i].ToLower()));
-                        if (tempHelpObject == null)
+
+                        if (tempHelpObject != null && !string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject != null && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
                         {
-                            description = "";
-                        }
-                        else
-                        {
-                            if (!string.IsNullOrWhiteSpace(_nestedProperty) && tempHelpObject != null && tempHelpObject.properties.Exists(x => x.name.ToLower() == _nestedProperty.ToLower()))
-                            {
-                                description = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower())?.description;
-                            }
-                            else
-                            {
-                                description = (tempHelpObject == null) ? $"{GlobalVariables.promptArray[i].ToLower()} not found in help resource" : tempHelpObject.description;
-                            }
+                            returnObject = tempHelpObject.properties.FirstOrDefault(x => x.name.ToLower() == _nestedProperty.ToLower());
                         }
                     }
                 }
@@ -81,11 +71,11 @@ namespace k8config
             {
                 if (!string.IsNullOrWhiteSpace(_nestedProperty))
                 {
-                    description = ((JToken)definitions).SelectTokens($"$..x-kubernetes-group-version-kind[?(@.kind == '{_nestedProperty}')]")?.First().Parent.Parent.Parent.Parent.First["description"]?.Value<string>();
+                    returnObject.description = ((JToken)definitions).SelectTokens($"$..x-kubernetes-group-version-kind[?(@.kind == '{_nestedProperty}')]")?.First().Parent.Parent.Parent.Parent.First["description"]?.Value<string>();
                 }
             }
 
-            return string.IsNullOrWhiteSpace(description) ? "Description not found" : description;
+            return  returnObject;
         }
 
         public List<DescriptionType> BuildPropTree(JToken _json)

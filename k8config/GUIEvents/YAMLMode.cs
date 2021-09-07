@@ -36,7 +36,7 @@ namespace k8config
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ Interactive Mode", () => ToggleDisplayMode()),
-               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.Red, Color.DarkGray))
+               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
             };
         
         static public void InteractiveYAMLMode()
