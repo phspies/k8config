@@ -5,6 +5,7 @@ using k8s.Models;
 using Microsoft.Rest;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Terminal.Gui;
 
@@ -36,7 +37,7 @@ namespace k8config
                         {
                             var config = KubernetesClientConfiguration.BuildConfigFromConfigObject(KubernetesClientConfiguration.LoadKubeConfig(), selectedContext);
                             k8Client = new Kubernetes(config);
-                            loadContextData();
+                            //loadContextData();
                             if (!watchersRunning)
                             {
                                 namespacelistResp = k8Client.ListNamespaceWithHttpMessagesAsync(watch: true);
@@ -66,7 +67,10 @@ namespace k8config
             Watcher<V1Pod> watcher = podlistResp.Watch<V1Pod, V1PodList>((eventType, pod) =>
             {
                 CRUDEventDataTable.Add(eventsTable, eventType, pod);
-                eventsListView.Update();
+                Monitor.Enter(eventsTableView);
+                eventsTableView.Table = DataTableExtention.Sort<EventType>(eventsTable);
+                eventsTableView.Update();
+                Monitor.Exit(eventsTableView);
                 switch (eventType)
                 {
                     case WatchEventType.Added:
@@ -83,9 +87,8 @@ namespace k8config
                     case WatchEventType.Bookmark:
                         break;
                 }
-                DataTableExtention.Sort<PodType>(ref podsTable);
-                podsListView.Table = podsTable;
-                podsListView.Update();
+                podsTableView.Table = DataTableExtention.Sort<PodType>(podsTable);
+                podsTableView.Update();
                 UpdateTabHeaders();
             });
         }
@@ -94,7 +97,10 @@ namespace k8config
             Watcher<V1ReplicaSet> watcher = replicasetlistResp.Watch<V1ReplicaSet, V1ReplicaSetList>((eventType, ReplicaSet) =>
             {
                 CRUDEventDataTable.Add(eventsTable, eventType, ReplicaSet);
-                eventsListView.Update();
+                Monitor.Enter(eventsTableView);
+                eventsTableView.Table = DataTableExtention.Sort<EventType>(eventsTable);
+                eventsTableView.Update();
+                Monitor.Exit(eventsTableView);
                 switch (eventType)
                 {
                     case WatchEventType.Added:
@@ -111,9 +117,8 @@ namespace k8config
                     case WatchEventType.Bookmark:
                         break;
                 }
-                DataTableExtention.Sort<ReplicaSetType>(ref replicasetsTable);
-                replicasetsListView.Table = replicasetsTable;
-                replicasetsListView.Update();
+                replicasetsTableView.Table = DataTableExtention.Sort<ReplicaSetType>(replicasetsTable);
+                replicasetsTableView.Update();
                 UpdateTabHeaders();
             });
 
@@ -123,7 +128,10 @@ namespace k8config
             Watcher<V1Service> watcher = servicelistResp.Watch<V1Service, V1ServiceList>((eventType, service) =>
             {
                 CRUDEventDataTable.Add(eventsTable, eventType, service);
-                eventsListView.Update();
+                Monitor.Enter(eventsTableView);
+                eventsTableView.Table = DataTableExtention.Sort<EventType>(eventsTable);
+                eventsTableView.Update();
+                Monitor.Exit(eventsTableView);
                 switch (eventType)
                 {
                     case WatchEventType.Added:
@@ -140,9 +148,8 @@ namespace k8config
                     case WatchEventType.Bookmark:
                         break;
                 }
-                DataTableExtention.Sort<ServiceType>(ref servicesTable);
-                servicesListView.Table = servicesTable;
-                servicesListView.Update();
+                servicesTableView.Table = DataTableExtention.Sort<ServiceType>(servicesTable);
+                servicesTableView.Update();
                 UpdateTabHeaders();
             });
         }
@@ -151,7 +158,10 @@ namespace k8config
             Watcher<V1Deployment> watcher = deploymentlistResp.Watch<V1Deployment, V1DeploymentList>((eventType, deployment) =>
             {
                 CRUDEventDataTable.Add(eventsTable, eventType, deployment);
-                eventsListView.Update();
+                Monitor.Enter(eventsTableView);
+                eventsTableView.Table = DataTableExtention.Sort<EventType>(eventsTable);
+                eventsTableView.Update();
+                Monitor.Exit(eventsTableView);
                 switch (eventType)
                 {
                     case WatchEventType.Added:
@@ -168,9 +178,8 @@ namespace k8config
                     case WatchEventType.Bookmark:
                         break;
                 }
-                DataTableExtention.Sort<DeploymentType>(ref deploymentsTable);
-                deploymentsListView.Table = deploymentsTable;
-                deploymentsListView.Update();
+                deploymentsTableView.Table = DataTableExtention.Sort<DeploymentType>(deploymentsTable); ;
+                deploymentsTableView.Update();
                 UpdateTabHeaders();
             });
 
@@ -180,7 +189,10 @@ namespace k8config
             Watcher<V1Namespace> watcher = namespacelistResp.Watch<V1Namespace, V1NamespaceList>((eventType, _namespace) =>
             {
                 CRUDEventDataTable.Add(eventsTable, eventType, _namespace);
-                eventsListView.Update();
+                Monitor.Enter(eventsTableView);
+                eventsTableView.Table = DataTableExtention.Sort<EventType>(eventsTable);
+                eventsTableView.Update();
+                Monitor.Exit(eventsTableView);
                 switch (eventType)
                 {
                     case WatchEventType.Added:
@@ -197,9 +209,8 @@ namespace k8config
                     case WatchEventType.Bookmark:
                         break;
                 }
-                DataTableExtention.Sort<NamespaceType>(ref namespacesTable);
-                namespaceListView.Table = namespacesTable;
-                namespaceListView.Update();
+                namespaceTableView.Table = DataTableExtention.Sort<NamespaceType>(namespacesTable); ;
+                namespaceTableView.Update();
                 UpdateTabHeaders();
             });
 

@@ -15,27 +15,39 @@ namespace k8config.GUIEvents.RealtimeMode.DataTables
     {
         public static DataTable Events()
         {
-            return DataTableExtention.CreateDataTable<EventType>();
+            DataTable dt = DataTableExtention.CreateDataTable<EventType>();
+            dt.DefaultView.Sort = "TimeStamp desc";
+            return dt.DefaultView.ToTable();
         }
         public static DataTable Namespaces()
         {
-            return DataTableExtention.CreateDataTable<NamespaceType>();
+            DataTable dt = DataTableExtention.CreateDataTable<NamespaceType>();
+            dt.DefaultView.Sort = "Name ASC";
+            return dt.DefaultView.ToTable();
         }
         public static DataTable Pods()
         {
-            return DataTableExtention.CreateDataTable<PodType>();
+            DataTable dt = DataTableExtention.CreateDataTable<PodType>();
+            dt.DefaultView.Sort = "Namespace ASC, Name ASC";
+            return dt.DefaultView.ToTable();
         }
         public static DataTable Services()
         {
-            return DataTableExtention.CreateDataTable<ServiceType>();
+            DataTable dt = DataTableExtention.CreateDataTable<ServiceType>();
+            dt.DefaultView.Sort = "Namespace ASC, Name ASC";
+            return dt.DefaultView.ToTable();
         }
         public static DataTable ReplicaSets()
         {
-            return DataTableExtention.CreateDataTable<ReplicaSetType>();
+            DataTable dt = DataTableExtention.CreateDataTable<ReplicaSetType>();
+            dt.DefaultView.Sort = "Namespace ASC, Name ASC";
+            return dt.DefaultView.ToTable();
         }
         public static DataTable Deployments()
         {
-            return DataTableExtention.CreateDataTable<DeploymentType>();
+            DataTable dt = DataTableExtention.CreateDataTable<DeploymentType>();
+            dt.DefaultView.Sort = "Namespace ASC, Name ASC";
+            return dt.DefaultView.ToTable();
         }
     }
 }

@@ -10,12 +10,17 @@ namespace k8config
     {
         public static void UpdateTabHeaders()
         {
-            namespacesTab.Text = $" Namespaces ({namespaceListView.Table.Rows.Count}) ";
-            podsTab.Text = $" Pods ({podsListView.Table.Rows.Count}) ";
-            servicesTab.Text = $" Services ({servicesListView.Table.Rows.Count}) ";
-            deploymentsTab.Text = $" Deployments ({deploymentsListView.Table.Rows.Count}) ";
-            replicasetsTab.Text = $" Replica Sets ({replicasetsListView.Table.Rows.Count}) ";
-            eventsTab.Text = $" Events ({eventsListView.Table.Rows.Count}) ";
+            namespacesTab.Text = $" Namespaces ({namespaceTableView.Table.Rows.Count}) ";
+            podsTab.Text = $" Pods ({podsTableView.Table.Rows.Count}) ";
+            servicesTab.Text = $" Services ({servicesTableView.Table.Rows.Count}) ";
+            deploymentsTab.Text = $" Deployments ({deploymentsTableView.Table.Rows.Count}) ";
+            replicasetsTab.Text = $" Replica Sets ({replicasetsTableView.Table.Rows.Count}) ";
+            eventsTab.Text = $" Events ({eventsTableView.Table.Rows.Count}) ";
+
+            //move table down to the latest entry
+            //eventsTableView.Move(0, eventsTable.Rows.Count - 1);
+
+            //update message bar
             updateMessageBar($"Connected to {selectedContext}");
         }
     }

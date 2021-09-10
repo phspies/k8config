@@ -1,16 +1,11 @@
-﻿using k8config.DataModels;
+﻿using k8config.GUIEvents.RealtimeMode.DataModels;
 using k8config.GUIEvents.RealtimeMode.DataTables;
-using k8config.Utilities;
 using k8s;
-using k8s.Models;
 using NStack;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Terminal.Gui;
 
 namespace k8config
@@ -27,14 +22,16 @@ namespace k8config
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
                 new StatusItem (Key.CharMask, "No context selected", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
             };
+        static List<PodType> podList = new List<PodType>();
+
         static Window availableContextsWindow = new Window();
         static ListView availableContextsListView = new ListView();
-        static TableView namespaceListView = new TableView();
-        static TableView podsListView = new TableView();
-        static TableView servicesListView = new TableView();
-        static TableView deploymentsListView = new TableView();
-        static TableView replicasetsListView = new TableView();
-        static TableView eventsListView = new TableView();
+        static TableView namespaceTableView = new TableView();
+        static TableView podsTableView = new TableView();
+        static TableView servicesTableView = new TableView();
+        static TableView deploymentsTableView = new TableView();
+        static TableView replicasetsTableView = new TableView();
+        static TableView eventsTableView = new TableView();
         static TabView.Tab namespacesTab = new TabView.Tab();
         static TabView.Tab podsTab = new TabView.Tab();
         static TabView.Tab servicesTab = new TabView.Tab();
@@ -121,7 +118,7 @@ namespace k8config
             };
 
 
-            namespaceListView = new TableView()
+            namespaceTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -141,7 +138,7 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            podsListView = new TableView()
+            podsTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -161,7 +158,15 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            servicesListView = new TableView()
+
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Namespace"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Namespace.ToString();
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Name"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Name.ToString();
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Ready"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Ready.ToString();
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Status"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Status.ToString();
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Restarts"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Restarts.ToString();
+            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Age"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Age.ToString();
+
+            servicesTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -181,7 +186,7 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            deploymentsListView = new TableView()
+            deploymentsTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -201,7 +206,7 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            replicasetsListView = new TableView()
+            replicasetsTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -221,7 +226,7 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            eventsListView = new TableView()
+            eventsTableView = new TableView()
             {
                 X = 0,
                 Y = 0,
@@ -241,14 +246,14 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            namespacesTab = new TabView.Tab($" Namespaces ", namespaceListView);
-            podsTab = new TabView.Tab($" Pods ", podsListView);
-            servicesTab = new TabView.Tab($" Services ", servicesListView);
-            deploymentsTab = new TabView.Tab($" Deployments ", deploymentsListView);
-            replicasetsTab = new TabView.Tab($" Replica Sets ", replicasetsListView);
-            eventsTab = new TabView.Tab($" Events ", eventsListView);
-            contextDetailTabs.AddTab(namespacesTab, true);
-            contextDetailTabs.AddTab(podsTab, false);
+            namespacesTab = new TabView.Tab($" Namespaces ", namespaceTableView);
+            podsTab = new TabView.Tab($" Pods ", podsTableView);
+            servicesTab = new TabView.Tab($" Services ", servicesTableView);
+            deploymentsTab = new TabView.Tab($" Deployments ", deploymentsTableView);
+            replicasetsTab = new TabView.Tab($" Replica Sets ", replicasetsTableView);
+            eventsTab = new TabView.Tab($" Events ", eventsTableView);
+            contextDetailTabs.AddTab(namespacesTab, false);
+            contextDetailTabs.AddTab(podsTab, true);
             contextDetailTabs.AddTab(servicesTab, false);
             contextDetailTabs.AddTab(deploymentsTab, false);
             contextDetailTabs.AddTab(replicasetsTab, false);
