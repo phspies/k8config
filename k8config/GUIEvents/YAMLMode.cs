@@ -19,7 +19,8 @@ namespace k8config
                 Effect3D = false,
             },
             Width = Dim.Fill(),
-            Height = Dim.Fill()
+            Height = Dim.Fill(),
+
         };
 
         static ListView availableKindsListView = new ListView();

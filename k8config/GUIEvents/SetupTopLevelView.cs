@@ -31,9 +31,9 @@ namespace k8config
             colorSelector = new ColorScheme()
             {
                 Normal = new Terminal.Gui.Attribute(Color.Black, Color.White),
-                Focus = new Terminal.Gui.Attribute(Color.White, Color.Blue),
+                Focus = new Terminal.Gui.Attribute(Color.White, Color.Red),
                 HotNormal = new Terminal.Gui.Attribute(Color.White, Color.Red),
-                HotFocus = new Terminal.Gui.Attribute(Color.Blue, Color.White),
+                HotFocus = new Terminal.Gui.Attribute(Color.White, Color.Red),
                 Disabled = new Terminal.Gui.Attribute(Color.DarkGray, Color.Black)
             };
             //Fire top level drawEvents
@@ -51,7 +51,9 @@ namespace k8config
                 }
                 else if (GlobalVariables.displayMode == 1)
                 {
-                    //redraw events
+                    availableContextsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.20);
+                    contextDetailTabs.X = availableContextsWindow.Bounds.Right;
+                    contextDetailTabs.Width = Dim.Fill();
                 }
             };
         }

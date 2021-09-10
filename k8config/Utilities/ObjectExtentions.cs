@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents.RealtimeMode.DataModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -10,6 +11,19 @@ namespace k8config.Utilities
 {
     public static class ObjectExtensions
     {
+
+        public static object GetPropValue<T>(this T src, string propName)
+        {
+            var interm = src.GetType();
+            return src.GetType().GetProperties().Where(pi => Attribute.IsDefined(pi, typeof(DataNameAttribute))).FirstOrDefault(x => x.Name == propName).GetValue(src, null);
+        }
+        public static object GetNestedPropertyValue(this object obj, string propertyName)
+        {
+            foreach (var prop in propertyName.Split('.').Select(s => obj.GetType().GetProperty(s)))
+                obj = prop.GetValue(obj, null);
+
+            return obj;
+        }
         public static T Clone<T>(this T source)
         {
             var serialized = JsonConvert.SerializeObject(source);
