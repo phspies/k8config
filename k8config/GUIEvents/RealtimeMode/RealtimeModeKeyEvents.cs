@@ -55,7 +55,7 @@ namespace k8config
                         }
                         catch (Exception ex)
                         {
-                            updateMessageBar($"Error connecting to {selectedContext} context {ex.Message}");
+                            UpdateMessageBar($"Error connecting to {selectedContext} context {ex.Message}");
                         }
                     });
                     busyWorkingWindow.Visible = false;

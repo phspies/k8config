@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8s.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace k8config
                 InteractiveModeWindow.Visible = true;
                 realtimeModeWindow.Visible = false;
                 statusBar.Items = interactiveStatusBarItems;
+                commandPromptTextField.SetFocus();
             }
         }
     }

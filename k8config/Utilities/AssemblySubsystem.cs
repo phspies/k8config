@@ -30,7 +30,6 @@ namespace k8config.Utilities
                                 version = namedArgs.FirstOrDefault(x => x.MemberName == "ApiVersion").TypedValue.Value.ToString(),
                                 group = namedArgs.FirstOrDefault(x => x.MemberName == "Group").TypedValue.Value.ToString(),
                                 assemblyFullName = assembly.AssemblyQualifiedName
-
                             });
                         }
                     }
@@ -40,8 +39,8 @@ namespace k8config.Utilities
         public static IEnumerable<Type> GetAvailableAssemblyList()
         {
 
-            return Assembly.Load("KubernetesClient").GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
-            //return Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
+            //return Assembly.Load("KubernetesClient").GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
+            return Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsClass && t.Namespace == "k8s.Models");
         }
     }
 }

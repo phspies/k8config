@@ -264,22 +264,22 @@ namespace k8config
                 switch (e.NewTab.Text)
                 {
                     case ustring a when a.ToLower().Contains("namespace"):
-                        updateMessageBar("Namespaces selected");
+                        UpdateMessageBar("Namespaces selected");
                         break;
                     case ustring a when a.ToLower().Contains("pod"):
-                        updateMessageBar("Pods selected");
+                        UpdateMessageBar("Pods selected");
                         break;
                     case ustring a when a.ToLower().Contains("service"):
-                        updateMessageBar("Services selected");
+                        UpdateMessageBar("Services selected");
                         break;
                     case ustring a when a.ToLower().Contains("deployment"):
-                        updateMessageBar("Deployments selected");
+                        UpdateMessageBar("Deployments selected");
                         break;
                     case ustring a when a.ToLower().Contains("replica"):
-                        updateMessageBar("ReplicSets selected");
+                        UpdateMessageBar("ReplicSets selected");
                         break;
                     case ustring a when a.ToLower().Contains("events"):
-                        updateMessageBar("Events selected");
+                        UpdateMessageBar("Events selected");
                         break;
                 };
             };
@@ -299,7 +299,7 @@ namespace k8config
             }
             catch (Exception ex)
             {
-                updateMessageBar(ex.Message);
+                UpdateMessageBar(ex.Message);
             }
             realtimeModeKeyEvents();
 

@@ -21,7 +21,7 @@ namespace k8config
             //eventsTableView.Move(0, eventsTable.Rows.Count - 1);
 
             //update message bar
-            updateMessageBar($"Connected to {selectedContext}");
+            UpdateMessageBar($"Connected to {selectedContext}");
         }
     }
 }

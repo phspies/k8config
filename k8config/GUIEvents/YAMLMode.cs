@@ -33,7 +33,6 @@ namespace k8config
         static Window descriptionWindow = new Window();
         static TextView descriptionView = new TextView();
         //static Label messageBarItem = new Label();
-        static KubernetesHelp kubeHelp = new KubernetesHelp();
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ Interactive Mode", () => ToggleDisplayMode()),

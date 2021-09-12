@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.810.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "k8config", "k8config\k8config.csproj", "{30F2E2E2-5C11-4B2A-BC0E-BC0C698EA6A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Watcher", "Watcher\Watcher.csproj", "{1C091178-558D-4154-9EDE-29E582FC49CC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{30F2E2E2-5C11-4B2A-BC0E-BC0C698EA6A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30F2E2E2-5C11-4B2A-BC0E-BC0C698EA6A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30F2E2E2-5C11-4B2A-BC0E-BC0C698EA6A4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C091178-558D-4154-9EDE-29E582FC49CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C091178-558D-4154-9EDE-29E582FC49CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C091178-558D-4154-9EDE-29E582FC49CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C091178-558D-4154-9EDE-29E582FC49CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

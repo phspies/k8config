@@ -14,6 +14,6 @@ namespace k8config.DataModels
         public Type kubeType { get; set; }
         public string KubeTypeString { get; set; }
         public bool isRequired { get; set; }
-        public object? kubeObject { get; set; }
+        public object kubeObject { get; set; }
     }
 }

@@ -1,7 +1,10 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
 using k8s;
+using k8s.Models;
+using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Terminal.Gui;
 
@@ -48,12 +51,6 @@ namespace k8config
             GlobalVariables.promptArray.Add(_promptString);
             repositionCommandInput();
             UpdateDescriptionView();
-        }
-        static void UpdateDescriptionView(string _nestedObject = null)
-        {
-            DescriptionType descriptionObject = kubeHelp.getCurrentObjectHelp(_nestedObject);
-            if (descriptionObject.description != null)
-                descriptionView.Text = descriptionObject?.description;
         }
     }
 }

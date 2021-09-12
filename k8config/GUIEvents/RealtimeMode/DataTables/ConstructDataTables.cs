@@ -1,13 +1,5 @@
 ﻿using k8config.GUIEvents.RealtimeMode.DataModels;
-using k8config.Utilities;
-using k8s.Models;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Terminal.Gui;
 
 namespace k8config.GUIEvents.RealtimeMode.DataTables
 {
