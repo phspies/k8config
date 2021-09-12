@@ -35,7 +35,12 @@ namespace k8config.Utilities
                 int pointer = 0;
                 foreach (var currentObject in (IList)_object)
                 {
-                    tmpList.Add(new OptionsSlimType() { index = pointer, name = currentObject.GetType().Name, value = currentObject, primaryType = currentObject.GetType() });
+                    tmpList.Add(new OptionsSlimType() { 
+                        index = pointer, 
+                        name = currentObject.GetNestedPropertyValue("Name") == null ? currentObject.GetNestedPropertyValue("Metadata.Name")?.ToString() : currentObject.GetNestedPropertyValue("Name")?.ToString(), 
+                        displayType = currentObject.GetType().Name, value = currentObject, 
+                        primaryType = currentObject.GetType() 
+                    });
                     pointer += 1;
                 }
             }

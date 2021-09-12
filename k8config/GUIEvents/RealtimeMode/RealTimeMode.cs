@@ -22,8 +22,6 @@ namespace k8config
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
                 new StatusItem (Key.CharMask, "No context selected", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
             };
-        static List<PodType> podList = new List<PodType>();
-
         static Window availableContextsWindow = new Window();
         static ListView availableContextsListView = new ListView();
         static TableView namespaceTableView = new TableView();
@@ -87,8 +85,6 @@ namespace k8config
         static public void RealTimeMode()
         {
             topLevelWindowObject.Add(InteractiveModeWindow);
-            statusBar = new StatusBar(realtimeStatusBarItems);
-            topLevelWindowObject.Add(statusBar);
             k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
            
             TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = false, ShowVerticalCellLines = false, ShowVerticalHeaderLines = false, ExpandLastColumn = false };

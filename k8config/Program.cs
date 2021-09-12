@@ -26,7 +26,7 @@ namespace k8config
             AssemblySubsystem.BuildAvailableAssemblyList();
 
             SetupTopLevelView();
-            InteractiveYAMLMode();
+            YAMLMode();
             RealTimeMode();
             YamlModeKeyEvents();
 

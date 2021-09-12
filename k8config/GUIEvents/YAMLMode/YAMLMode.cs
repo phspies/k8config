@@ -1,4 +1,6 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents.YAMLMode;
+using k8s.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,22 +37,47 @@ namespace k8config
         //static Label messageBarItem = new Label();
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
-                new StatusItem(Key.F10, "~F10~ Interactive Mode", () => ToggleDisplayMode()),
+                new StatusItem(Key.F2, "~F2~ Validate", () => {
+                    List<string> objections = YAMLOperations.Validate();
+                    var closeWarnWindowButton = new Button("Close", true);
+                    var warnWindow = new Dialog("Validation Status", 60, 17, closeWarnWindowButton)
+                    {
+                        Title = "Failed Validations",
+                        Width = 60,
+                        Height = 17,
+                        X = Pos.Center(),
+                        Y = Pos.Center(),
+                    };
+                    var listView = new ListView(objections)
+                    {
+                        Width = 56,
+                        Height = 12,
+                        X = warnWindow.Bounds.Top + 2,
+                        Y = Pos.Center()
+                    };
+                    warnWindow.Add(listView);
+                    closeWarnWindowButton.Clicked += () => {
+                        warnWindow.Visible = false;
+                        commandPromptTextField.SetFocus();
+                    };
+                    warnWindow.Visible = true;
+                    topLevelWindowObject.Add(warnWindow);
+                    closeWarnWindowButton.SetFocus();
+                }),
+                new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); }),
                new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
             };
-        
-        static public void InteractiveYAMLMode()
-        {
-            statusBar = new StatusBar(interactiveStatusBarItems);
-            topLevelWindowObject.Add(statusBar);
 
+        static public void YAMLMode()
+        {
+            statusBar.Items = interactiveStatusBarItems;
             availableKindsWindow = new Window()
             {
                 Title = "Available Commands",
                 X = 0,
                 Y = 0,
                 Width = 50,
-                Height = Dim.Fill() - 9,
+                Height = Dim.Fill() - 8,
                 TabStop = false,
                 CanFocus = false,
                 ColorScheme = colorNormal,
@@ -69,11 +96,12 @@ namespace k8config
             };
             descriptionView = new TextView()
             {
+
                 Y = 0,
                 X = 0,
                 Width = Dim.Fill(),
                 Height = Dim.Fill(),
-                Text = "",
+                Text = "No definitions found. Please create a definition with the 'new <kind>' command.",
                 ColorScheme = colorNormal,
                 ReadOnly = true,
                 WordWrap = true,
@@ -91,7 +119,7 @@ namespace k8config
                 X = availableKindsWindow.Bounds.Right,
                 Y = 0,
                 Width = Dim.Fill(),
-                Height = Dim.Fill() - 10,
+                Height = Dim.Fill() - 9,
                 TabStop = false,
                 CanFocus = false,
                 ColorScheme = colorNormal
@@ -102,14 +130,14 @@ namespace k8config
                 Title = "Command Line",
                 Y = descriptionWindow.Bounds.Bottom,
                 Width = Dim.Fill(),
-                Height = 4,
+                Height = 3,
                 ColorScheme = colorNormal,
                 TabStop = false,
                 CanFocus = false,
             };
 
 
-            commandPromptLabel = new Label(string.Join(":", GlobalVariables.promptArray) + ">") { TextAlignment = TextAlignment.Left, X = 1 };
+            commandPromptLabel = new Label(string.Join(":", GlobalVariables.promptArray) + ">") { TextAlignment = TextAlignment.Left, X = 1, TabStop = false };
             commandPromptTextField = new TextField("") { X = Pos.Right(commandPromptLabel) + 1, Width = Dim.Fill(), TabStop = true };
 
             definedYAMLListView = new ListView()
@@ -139,25 +167,16 @@ namespace k8config
             };
 
             availableKindsWindow.Add(availableKindsListView);
-            //messageBarItem.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.Red, Color.White) };
-            //messageBarItem.Width = Dim.Fill();
-            //displayMessageStatusBar("No definitions found";
-            //messageBarItem.CanFocus = false;
-            //messageBarItem.Y = 1;
-            //messageBarItem.X = 1;
-            //displayMessageStatusBar("No definitions found";
-
-
             InteractiveModeWindow.Add(commandWindow, definedYAMLWindow);
             InteractiveModeWindow.Add(availableKindsWindow);
-
             //commandWindow.Add(messageBarItem);
             descriptionWindow.Add(descriptionView);
             InteractiveModeWindow.Add(descriptionWindow);
             commandWindow.Add(commandPromptLabel, commandPromptTextField);
-
             topLevelWindowObject.Add(InteractiveModeWindow);
-            topLevelWindowObject.Add(statusBar);
+
+            ToggleDisplayMode();
+
         }
     }
 }

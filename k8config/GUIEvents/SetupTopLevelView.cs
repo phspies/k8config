@@ -19,7 +19,8 @@ namespace k8config
             topLevelWindowObject.Clear();
             topLevelWindowObject.TabStop = true;
             topLevelWindowObject.ColorScheme.Normal = new Terminal.Gui.Attribute(Color.Black, Color.White);
-            
+            topLevelWindowObject.Add(statusBar);
+
             colorNormal = new ColorScheme()
             {
                 Normal = new Terminal.Gui.Attribute(Color.Black, Color.White),
@@ -45,7 +46,7 @@ namespace k8config
                     availableKindsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.30);
                     definedYAMLWindow.X = availableKindsWindow.Bounds.Right;
                     definedYAMLWindow.Height = availableKindsWindow.Bounds.Height;
-                    commandWindow.Y = topLevelWindowObject.Bounds.Height - 5;
+                    commandWindow.Y = topLevelWindowObject.Bounds.Height - 4;
                     descriptionWindow.X = 0;
                     descriptionWindow.Y = availableKindsWindow.Bounds.Bottom;
                 }

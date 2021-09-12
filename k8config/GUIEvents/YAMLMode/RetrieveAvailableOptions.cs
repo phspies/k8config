@@ -52,7 +52,7 @@ namespace k8config
                             new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"}
                         };
                 }
-                tmpAvailableOptions.AddRange(GlobalVariables.sessionDefinedKinds[int.Parse(GlobalVariables.promptArray[1]) - 1].KubeObject.RetrieveAttributeValues().Select(x => new OptionsSlimType() { name = x.name.ToLower() }).ToList());
+                tmpAvailableOptions.AddRange(GlobalVariables.sessionDefinedKinds[int.Parse(GlobalVariables.promptArray[1]) - 1].KubeObject.RetrieveAttributeValues());
             }
             else if (GlobalVariables.promptArray.Count() > 2)
             {
@@ -106,12 +106,10 @@ namespace k8config
                     {
                         returnHeader = "Available Defined Kinds";
                         tmpAvailableOptions = GlobalVariables.sessionDefinedKinds.Select(x => new OptionsSlimType() { name = x.kind, index = x.index }).Where(x => x.name.StartsWith(searchValue)).ToList();
-
                     }
                 }
             }
             return Tuple.Create(returnHeader, tmpAvailableOptions);
         }
-
     }
 }

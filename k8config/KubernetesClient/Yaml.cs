@@ -39,6 +39,17 @@ namespace k8s
                 .WithOverridesFromJsonPropertyAttributes()
                 .BuildValueSerializer();
 
+        public static readonly ISerializer YAMLSerializer =
+            new SerializerBuilder()
+            .DisableAliases()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .WithTypeConverter(new IntOrStringYamlConverter())
+            .WithTypeConverter(new ByteArrayStringYamlConverter())
+            .WithEventEmitter(e => new StringQuotingEmitter(e))
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+            .WithOverridesFromJsonPropertyAttributes()
+            .Build();
+
         private static readonly IDictionary<string, Type> ModelTypeMap = typeof(KubernetesEntityAttribute).Assembly
             .GetTypes()
             .Where(t => t.GetCustomAttributes(typeof(KubernetesEntityAttribute), true).Any())

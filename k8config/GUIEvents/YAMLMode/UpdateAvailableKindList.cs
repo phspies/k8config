@@ -7,6 +7,7 @@ namespace k8config
 {
     partial class Program
     {
+        static List<OptionsSlimType> currentAvailableOptions = new List<OptionsSlimType>();
         static void updateAvailableKindsList()
         {
             if (currentavailableListUpDown)
@@ -17,6 +18,7 @@ namespace k8config
             {
                 Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
                 availableKindsWindow.Title = returnValues.Item1;
+                currentAvailableOptions = returnValues.Item2;
                 availableKindsListView.SetSource(returnValues.Item2.Select(x => x.TableView()).ToList());
                 if (!string.IsNullOrWhiteSpace(commandPromptTextField.Text.ToString()))
                 {

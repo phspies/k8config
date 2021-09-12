@@ -26,6 +26,7 @@ namespace k8config
                 realtimeModeWindow.Visible = false;
                 statusBar.Items = interactiveStatusBarItems;
                 commandPromptTextField.SetFocus();
+                //UpdateDescriptionView();
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using k8config.DataModels;
 using k8config.GUIEvents.RealtimeMode.DataModels;
+using k8s.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -11,17 +12,27 @@ namespace k8config.Utilities
 {
     public static class ObjectExtensions
     {
+        public static List<PropertyInfo> GetObjectProperties(this object src)
+        {
+            return src.GetType().GetProperties().ToList();
 
+        }
         public static object GetPropValue<T>(this T src, string propName)
         {
             var interm = src.GetType();
-            return src.GetType().GetProperties().Where(pi => Attribute.IsDefined(pi, typeof(DataNameAttribute))).FirstOrDefault(x => x.Name == propName).GetValue(src, null);
+            return src.GetType().GetProperties().Where(pi => Attribute.IsDefined(pi, typeof(DataNameAttribute))).FirstOrDefault(x => x.Name == propName)?.GetValue(src, null);
         }
         public static object GetNestedPropertyValue(this object obj, string propertyName)
         {
-            foreach (var prop in propertyName.Split('.').Select(s => obj.GetType().GetProperty(s)))
-                obj = prop.GetValue(obj, null);
-
+            if (obj != null)
+            {
+                foreach (var prop in propertyName.Split('.').Select(s => obj.GetType().GetProperty(s)))
+                {
+                    if (prop == null) { return null; }
+                    obj = prop.GetValue(obj, null);
+                    if (obj == null) return null;
+                }
+            }
             return obj;
         }
         public static T Clone<T>(this T source)
@@ -185,7 +196,6 @@ namespace k8config.Utilities
             {
                 if (o.GetType().IsGenericType)
                 {
-                    var test = o.GetType().GetGenericTypeDefinition();
                     if (o.GetType().GetGenericTypeDefinition() == typeof(List<>))
                     {
 
@@ -222,7 +232,12 @@ namespace k8config.Utilities
                         {
                             if (!removeAttributes.Contains(x.Name))
                             {
-                                var newOptionObject = new OptionsSlimType() { name = x.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName, primaryType = x.GetKubeType(), value = x.GetValue(o, null) };
+                                var newOptionObject = new OptionsSlimType() {
+                                    name = x.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName,
+                                    primaryType = x.GetKubeType(), value = x.GetValue(o, null),
+                                    propertyIsRequired = (x.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false)[0] as KubernetesPropertyAttribute).IsRequired
+
+                                };
 
                                 if (x.IsStringArray())
                                 {

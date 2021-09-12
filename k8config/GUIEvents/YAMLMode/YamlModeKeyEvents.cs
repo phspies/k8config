@@ -29,7 +29,11 @@ namespace k8config
                             {
                                 availableKindsListView.SelectedItem = availableKindsListView.SelectedItem - 1;
                                 availableKindsListView.TopItem = availableKindsListView.SelectedItem;
+                                commandPromptTextField.Text = currentAvailableOptions[availableKindsListView.SelectedItem].name;
+                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                                UpdateDescriptionView(commandPromptTextField.Text.ToString());
                             }
+                            commandPromptTextField.SetFocus();
                             break;
                         case Key.CursorDown:
                             currentavailableListUpDown = true;
@@ -37,7 +41,11 @@ namespace k8config
                             {
                                 availableKindsListView.SelectedItem = availableKindsListView.SelectedItem + 1;
                                 availableKindsListView.TopItem = availableKindsListView.SelectedItem;
+                                commandPromptTextField.Text = currentAvailableOptions[availableKindsListView.SelectedItem].name;
+                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                                UpdateDescriptionView(commandPromptTextField.Text.ToString());
                             }
+                            commandPromptTextField.SetFocus();
                             break;
                         default:
 
@@ -392,8 +400,9 @@ namespace k8config
                             {
                                 if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == currentInputText))
                                 {
-                                    UpdateDescriptionView(currentInputText);
                                     object tmpObject = KubeObject.GetCurrentObject();
+                                    UpdateDescriptionView(currentInputText);
+                                    
                                     if (tmpObject.RetrieveAttributeValues().Exists(x => x.name.ToLower() == currentInputText.ToLower()))
                                     {
                                         var currentKubeObject = tmpObject.RetrieveAttributeValues().FirstOrDefault(x => x.name.ToLower() == currentInputText.ToLower());
