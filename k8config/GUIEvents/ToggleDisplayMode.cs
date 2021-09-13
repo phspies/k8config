@@ -18,6 +18,7 @@ namespace k8config
                 InteractiveModeWindow.Visible = false;
                 statusBar.Items = realtimeStatusBarItems;
                 realtimeModeWindow.Visible = true;
+                StartWatchersTasks();
             }
             else
             {
