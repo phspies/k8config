@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "k8config_gui.WinUI": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": false
+    }
+  }
+}

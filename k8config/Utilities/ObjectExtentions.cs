@@ -241,19 +241,19 @@ namespace k8config.Utilities
 
                                 if (x.IsStringArray())
                                 {
-                                    newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name}>";
+                                    newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1","")}>";
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                     newOptionObject.propertyIsArray = true;
                                 }
                                 else if (x.IsList())
                                 {
-                                    newOptionObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name}>";
+                                    newOptionObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>";
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                     newOptionObject.propertyIsList = true;
                                 }
                                 else if (x.IsDictionary())
                                 {
-                                    newOptionObject.displayType = $"Dictionary<{x.PropertyType.GetGenericArguments()[0].Name},{x.PropertyType.GetGenericArguments()[1].Name}>";
+                                    newOptionObject.displayType = $"Dictionary<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")},{x.PropertyType.GetGenericArguments()[1].Name.Replace("V1", "")}>";
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                     newOptionObject.secondaryType = x.PropertyType.GetGenericArguments()[1];
                                     newOptionObject.properyType = x.PropertyType;
@@ -261,7 +261,7 @@ namespace k8config.Utilities
                                 }
                                 else if (x.PropertyType.GetGenericArguments().Length > 0)
                                 {
-                                    newOptionObject.displayType = x.PropertyType.GetGenericArguments()[0].Name;
+                                    newOptionObject.displayType = x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "");
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                 }
                                 else

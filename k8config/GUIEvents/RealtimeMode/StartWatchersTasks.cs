@@ -56,43 +56,50 @@ namespace k8config
         static public List<Task> watchersTasks = new List<Task>();
         static void StartWatchersTasks()
         {
+            busyWorkingWindow.Visible = true;
             watchersCancelationTokenSource.Cancel();
             watchersTasks.ForEach(task =>
             {
-                while (task.Status != TaskStatus.RanToCompletion) { Thread.Sleep(10); }
+                while (task.Status == TaskStatus.Running)
+                {
+                    task.Wait(); 
+                    Thread.Sleep(10); 
+                }
             });
             watchersTasks = new List<Task>();
             watchersCancelationTokenSource = new CancellationTokenSource();
-
-            busyWorkingWindow.Visible = true;
+     
             if (string.IsNullOrWhiteSpace(selectedContext))
             {
                 selectedContext = KubernetesClientConfiguration.BuildDefaultConfig().CurrentContext;
             }
             busyWorkingWindow.Text = $"Connecting to {selectedContext} context";
 
-            try
+            watchersTasks.Add(Task.Run(() =>
             {
-                k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigObject(KubernetesClientConfiguration.LoadKubeConfig(), selectedContext));
-                if (!watchersRunning)
+                try
                 {
-                    namespacelistResp = k8Client.ListNamespaceWithHttpMessagesAsync(watch: true);
-                    podlistResp = k8Client.ListPodForAllNamespacesWithHttpMessagesAsync(watch: true);
-                    deploymentlistResp = k8Client.ListDeploymentForAllNamespacesWithHttpMessagesAsync(watch: true);
-                    servicelistResp = k8Client.ListServiceForAllNamespacesWithHttpMessagesAsync(watch: true);
-                    replicasetlistResp = k8Client.ListReplicaSetForAllNamespacesWithHttpMessagesAsync(watch: true);
-                    Application.MainLoop.Invoke(processPodEvents);
-                    Application.MainLoop.Invoke(processDeploymentEvents);
-                    Application.MainLoop.Invoke(processReplicaSetEvents);
-                    Application.MainLoop.Invoke(processNamespaceEvents);
-                    Application.MainLoop.Invoke(processServiceEvents);
-                    watchersRunning = true;
+                    k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigObject(KubernetesClientConfiguration.LoadKubeConfig(), selectedContext));
+                    if (!watchersRunning)
+                    {
+                        namespacelistResp = k8Client.ListNamespaceWithHttpMessagesAsync(watch: true);
+                        podlistResp = k8Client.ListPodForAllNamespacesWithHttpMessagesAsync(watch: true);
+                        deploymentlistResp = k8Client.ListDeploymentForAllNamespacesWithHttpMessagesAsync(watch: true);
+                        servicelistResp = k8Client.ListServiceForAllNamespacesWithHttpMessagesAsync(watch: true);
+                        replicasetlistResp = k8Client.ListReplicaSetForAllNamespacesWithHttpMessagesAsync(watch: true);
+                        Application.MainLoop.Invoke(processPodEvents);
+                        Application.MainLoop.Invoke(processDeploymentEvents);
+                        Application.MainLoop.Invoke(processReplicaSetEvents);
+                        Application.MainLoop.Invoke(processNamespaceEvents);
+                        Application.MainLoop.Invoke(processServiceEvents);
+                        watchersRunning = true;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                UpdateMessageBar($"Error connecting to {selectedContext} context {ex.Message}");
-            }
+                catch (Exception ex)
+                {
+                    UpdateMessageBar($"Error connecting to {selectedContext} context {ex.Message}");
+                }
+            }, watchersCancelationTokenSource.Token));
             busyWorkingWindow.Visible = false;
         }
         /// <summary>

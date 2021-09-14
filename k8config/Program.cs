@@ -41,7 +41,7 @@ namespace k8config
 
         static void repositionCommandInput()
         {
-            commandPromptLabel.Text = string.Join(":", GlobalVariables.promptArray) + ">";
+            commandPromptLabel.Text = string.Join("/", GlobalVariables.promptArray) + ">";
             commandPromptLabel.Width = commandPromptLabel.Text.Count() + 1;
             commandPromptTextField.X = Pos.Right(commandPromptLabel);
         }

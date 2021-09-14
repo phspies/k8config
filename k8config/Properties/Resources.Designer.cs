@@ -59,15 +59,5 @@ namespace k8config.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        public static byte[] k8help {
-            get {
-                object obj = ResourceManager.GetObject("k8help", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }
