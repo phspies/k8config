@@ -19,7 +19,7 @@ namespace k8config.GUIEvents.YAMLMode
             concernList = new List<string>();
             GlobalVariables.sessionDefinedKinds.ForEach(definedKind =>
             {
-                nestedLoopValidation(definedKind.KubeObject, $"/{definedKind.index}/{definedKind.kind}");
+                nestedLoopValidation(definedKind.KubeObject, $":{definedKind.index}:{definedKind.kind}");
             });
             return concernList.Count > 0 ? concernList : new List<string>() { "All validations passed" };
         }
@@ -42,7 +42,7 @@ namespace k8config.GUIEvents.YAMLMode
                 {
                     if (!removeAttributes.Contains(_property.Name) && _property.CanWrite)
                     {
-                        string currentPath = $"{_currentPath}/{_property.Name}";
+                        string currentPath = $"{_currentPath}:{_property.Name}";
                         bool isRequired = (_property.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false)?.First() as KubernetesPropertyAttribute)?.IsRequired ?? false;
                         if (isRequired && _property.GetValue(_object) == null)
                         {

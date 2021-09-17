@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 
 namespace Terminal.Gui {
 
@@ -59,9 +60,12 @@ namespace Terminal.Gui {
 		private DataTable table;
 		private TableStyle style = new TableStyle ();
 
+		public bool IsUpdatingTable = false;
+
 		/// <summary>
 		/// The default maximum cell width for <see cref="TableView.MaxCellWidth"/> and <see cref="ColumnStyle.MaxWidth"/>
 		/// </summary>
+		/// 
 		public const int DefaultMaxCellWidth = 100;
 
 		/// <summary>
@@ -193,6 +197,10 @@ namespace Terminal.Gui {
 		///<inheritdoc/>
 		public override void Redraw (Rect bounds)
 		{
+			if (IsUpdatingTable)
+            {
+				return;
+            }
 			Move (0, 0);
 			var frame = Frame;
 
@@ -407,9 +415,7 @@ namespace Terminal.Gui {
 
 				// Set color scheme based on whether the current cell is the selected one
 				bool isSelectedCell = IsSelected (current.Column.Ordinal, rowToRender);
-
-				var val = Table.Rows [rowToRender] [current.Column];
-
+				object val = Table.Rows[rowToRender][current.Column.Caption];
 				// Render the (possibly truncated) cell value
 				var representation = GetRepresentation (val, colStyle);
 
@@ -921,6 +927,10 @@ namespace Terminal.Gui {
 		/// <remarks>This always calls <see cref="View.SetNeedsDisplay()"/></remarks>
 		public void Update ()
 		{
+			if (IsUpdatingTable)
+			{
+				return;
+			}
 			if (Table == null) {
 				SetNeedsDisplay ();
 				return;
@@ -1054,8 +1064,11 @@ namespace Terminal.Gui {
 		/// <returns></returns>
 		private IEnumerable<ColumnToRender> CalculateViewport (Rect bounds, int padding = 1)
 		{
+
 			if (Table == null)
 				yield break;
+
+			IEnumerable<DataColumn> columns = from c in Table.Columns.Cast<DataColumn>() where c.ColumnMapping != MappingType.Hidden select c;
 
 			int usedSpace = 0;
 
@@ -1071,9 +1084,9 @@ namespace Terminal.Gui {
 				rowsToRender -= GetHeaderHeight ();
 
 			bool first = true;
-			var lastColumn = Table.Columns.Cast<DataColumn> ().Last ();
+			var lastColumn = columns.Last ();
 
-			foreach (var col in Table.Columns.Cast<DataColumn> ().Skip (ColumnOffset)) {
+			foreach (var col in columns.Skip (ColumnOffset)) {
 
 				int startingIdxForCurrentHeader = usedSpace;
 				var colStyle = Style.GetColumnStyleIfAny (col);

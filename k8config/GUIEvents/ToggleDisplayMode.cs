@@ -22,6 +22,7 @@ namespace k8config
             }
             else
             {
+                CancelAllWatchers();
                 GlobalVariables.displayMode = 0;
                 InteractiveModeWindow.Visible = true;
                 realtimeModeWindow.Visible = false;

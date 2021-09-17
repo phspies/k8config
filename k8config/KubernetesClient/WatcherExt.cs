@@ -1,6 +1,8 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using k8s.Exceptions;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Rest;
 
 namespace k8s
@@ -23,7 +25,7 @@ namespace k8s
             this Task<HttpOperationResponse<L>> responseTask,
             Action<WatchEventType, T> onEvent,
             Action<Exception> onError = null,
-            Action onClosed = null)
+            Action onClosed = null, CancellationToken ctx = default(CancellationToken))
         {
             return new Watcher<T>(
                 async () =>
@@ -36,7 +38,7 @@ namespace k8s
                 }
 
                 return content.StreamReader;
-            }, onEvent, onError, onClosed);
+            }, onEvent, onError, onClosed, ctx);
         }
 
         /// <summary>
@@ -55,9 +57,9 @@ namespace k8s
             this HttpOperationResponse<L> response,
             Action<WatchEventType, T> onEvent,
             Action<Exception> onError = null,
-            Action onClosed = null)
+            Action onClosed = null, CancellationToken ctx = default(CancellationToken))
         {
-            return Watch(Task.FromResult(response), onEvent, onError, onClosed);
+            return Watch(Task.FromResult(response), onEvent, onError, onClosed, ctx);
         }
     }
 }

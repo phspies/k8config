@@ -7,28 +7,42 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
     [AttributeUsage(AttributeTargets.Property)]
     public class DataNameAttribute : Attribute
     {
-        protected string _valueName { get; set; }
+        protected string _column { get; set; }
+        protected bool _visible { get; set; }
 
-        public string ValueName
+        public string Column
         {
             get
             {
-                return _valueName;
+                return _column;
             }
             set
             {
-                _valueName = value;
+                _column = value;
+            }
+        }
+        public bool Visible
+        {
+            get
+            {
+                return _visible;
+            }
+            set
+            {
+                _visible = value;
             }
         }
 
         public DataNameAttribute()
         {
-            _valueName = "";
+            _column = "";
+            _visible = true;
         }
 
-        public DataNameAttribute(string valueName)
+        public DataNameAttribute(string column, bool visible = true)
         {
-            _valueName = valueName;
+            _column = column;
+            _visible = visible;
         }
     }
 }

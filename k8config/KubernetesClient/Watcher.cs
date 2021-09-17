@@ -88,16 +88,15 @@ namespace k8s
         /// <param name="onClosed">
         /// The action to invoke when the server closes the connection.
         /// </param>
-        public Watcher(Func<Task<TextReader>> streamReaderCreator, Action<WatchEventType, T> onEvent,
-            Action<Exception> onError, Action onClosed = null)
+        public Watcher(Func<Task<TextReader>> streamReaderCreator, Action<WatchEventType, T> onEvent, Action<Exception> onError, 
+            Action onClosed = null, CancellationToken _cts = default(CancellationToken))
         {
             _streamReaderCreator = streamReaderCreator;
             OnEvent += onEvent;
             OnError += onError;
             OnClosed += onClosed;
 
-            _cts = new CancellationTokenSource();
-            _watcherLoop = Task.Run(async () => await WatcherLoop(_cts.Token).ConfigureAwait(false));
+            _watcherLoop = Task.Run(async () => await WatcherLoop(_cts).ConfigureAwait(false));
         }
 
         /// <summary>

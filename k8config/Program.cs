@@ -1,10 +1,7 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
-using k8s;
-using k8s.Models;
+using NLog;
 using System;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Terminal.Gui;
 
@@ -15,14 +12,45 @@ namespace k8config
         static string autoCompleteInterruptText = "";
         static int autoCompleteInterruptIndex = 0;
         static bool currentavailableListUpDown = false;
-
+        static Logger Log;
+        static string proxyHost = string.Empty;
         static void Main(string[] args)
         {
+            Application.Init();
+
+            if (args.Length > 0)
+            {
+                args.ForEach(x =>
+                {
+                    string[] argvals = x.Split("=");
+                    switch(argvals[0])
+                    {
+                        case "--proxyHost":
+                            proxyHost = argvals[1];
+                            break;
+                        default:
+                            Console.WriteLine($"{argvals[0]} not known");
+                            break;
+                    }
+                });
+            }
+
+            var config = new NLog.Config.LoggingConfiguration();
+            // Targets where to log to: File and Console
+            config.AddRule(LogLevel.Debug, LogLevel.Fatal, new NLog.Targets.FileTarget("logfile") { FileName = "k8config.log" });
+
+            // Apply config           
+            LogManager.Configuration = config;
+            Log = LogManager.GetCurrentClassLogger();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
+                Log.Debug($"This is a OSX client, using system console to GUI");
                 Application.UseSystemConsole = true;
             }
-            Application.Init();
+            else
+            {
+                Log.Debug($"This is a {RuntimeInformation.OSDescription} client");
+            }
             AssemblySubsystem.BuildAvailableAssemblyList();
 
             SetupTopLevelView();
@@ -39,12 +67,7 @@ namespace k8config
 
 
 
-        static void repositionCommandInput()
-        {
-            commandPromptLabel.Text = string.Join("/", GlobalVariables.promptArray) + ">";
-            commandPromptLabel.Width = commandPromptLabel.Text.Count() + 1;
-            commandPromptTextField.X = Pos.Right(commandPromptLabel);
-        }
+
 
         static void AddToPrompt(string _promptString)
         {

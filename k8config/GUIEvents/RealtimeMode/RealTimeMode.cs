@@ -1,8 +1,10 @@
-﻿using k8config.GUIEvents.RealtimeMode.DataModels;
-using k8config.GUIEvents.RealtimeMode.DataTables;
+﻿using k8config.DataModels;
+using k8config.GUIDeployments.RealtimeMode.DataModels;
+using k8config.GUIEvents.RealtimeMode.DataModels;
 using k8s;
 using NStack;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -15,12 +17,67 @@ namespace k8config
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, "No context selected", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
-        static StatusItem[] realtimeStatusBarItemsSelected = new StatusItem[] {
+        static StatusItem[] realtimeStatusBarPodsSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    PodType pod = podsList.Dictionary.FirstOrDefault(x => x.Key == long.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["Index"].ToString())).Value;
+                    RAWYamlView(pod?.Name, pod?.RawObject);
+                }),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, "No context selected", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+            };
+        static StatusItem[] realtimeStatusBarServicesSelected = new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    DataRow row =servicesTableView.Table.Select()[servicesTableView.SelectedRow];
+                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                }),
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+            };
+        static StatusItem[] realtimeStatusBarDeploymentsSelected = new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    DataRow row =deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow];
+                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                }),
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+            };
+        static StatusItem[] realtimeStatusBarNamespacesSelected = new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    DataRow row =namespaceTableView.Table.Select()[namespaceTableView.SelectedRow];
+                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                }),
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+            };
+        static StatusItem[] realtimeStatusBarRepSetsSelected = new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    DataRow row =replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow];
+                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                }),
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+            };
+        static StatusItem[] realtimeStatusBarEventsSelected = new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
+                {
+                    DataRow eventRecord = eventsList.DataTableConstruct.Rows[eventsTableView.SelectedRow];
+                    RAWYamlView(eventRecord["Name"].ToString(), eventRecord["RawObject"]);
+                }),
+                new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static Window availableContextsWindow = new Window();
         static ListView availableContextsListView = new ListView();
@@ -36,12 +93,14 @@ namespace k8config
         static TabView.Tab deploymentsTab = new TabView.Tab();
         static TabView.Tab replicasetsTab = new TabView.Tab();
         static TabView.Tab eventsTab = new TabView.Tab();
-        static DataTable namespacesTable = ConstructDataTables.Namespaces();
-        static DataTable podsTable = ConstructDataTables.Pods();
-        static DataTable servicesTable = ConstructDataTables.Services();
-        static DataTable deploymentsTable = ConstructDataTables.Deployments();
-        static DataTable replicasetsTable = ConstructDataTables.ReplicaSets();
-        static DataTable eventsTable = ConstructDataTables.Events();
+
+        static NamespaceListType namespacesList = new NamespaceListType();
+        static PodListType podsList = new PodListType();
+        static ServiceListType servicesList = new ServiceListType();
+        static DeploymentListType deploymentsList = new DeploymentListType();
+        static ReplicaSetListType replicasetsList = new ReplicaSetListType();
+        static EventListType eventsList = new EventListType();
+
         static TabView contextDetailTabs = new TabView()
         {
             Width = Dim.Fill(),
@@ -80,13 +139,29 @@ namespace k8config
             CanFocus = false,
             ColorScheme = colorSelector,
         };
-      
+        static Button closeRAWWindowButton = new Button("Close", true);
+        static Dialog rawYAMLWindow = new Dialog("RAW YAML View", 80, 40, closeRAWWindowButton)
+        {
+            Visible = false,
+
+            X = Pos.Center(),
+            Y = Pos.Center(),
+        };
+        static List<string> rawYAMLList = new List<string>();
+        static ListView rawYAMLListView = new ListView(rawYAMLList)
+        {
+            Width = Dim.Fill() - 2,
+            Height = Dim.Fill() - 3,
+            X = 2,
+            Y = 1
+        };
+
 
         static public void RealTimeMode()
         {
             topLevelWindowObject.Add(InteractiveModeWindow);
             k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
-           
+
             TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = false, ShowVerticalCellLines = false, ShowVerticalHeaderLines = false, ExpandLastColumn = false };
 
             availableContextsWindow = new Window()
@@ -123,7 +198,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = namespacesTable,
+                Table = namespacesList.ToDataTable(),
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -143,7 +218,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = podsTable,
+                Table = podsList.DataTable,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -155,12 +230,7 @@ namespace k8config
                 ColorScheme = colorSelector
             };
 
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Namespace"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Namespace.ToString();
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Name"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Name.ToString();
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Ready"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Ready.ToString();
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Status"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Status.ToString();
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Restarts"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Restarts.ToString();
-            //podsTableView.Style.GetOrCreateColumnStyle(podsTable.Columns["Age"]).RepresentationGetter = (i) => podList.FirstOrDefault(x => x.Name == (string)i).Age.ToString();
+
 
             servicesTableView = new TableView()
             {
@@ -171,7 +241,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = servicesTable,
+                Table = servicesList.ToDataTable(),
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -191,7 +261,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = deploymentsTable,
+                Table = deploymentsList.DataTable,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -202,6 +272,8 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
+
+
             replicasetsTableView = new TableView()
             {
                 X = 0,
@@ -211,7 +283,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = replicasetsTable,
+                Table = replicasetsList.ToDataTable(),
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -231,7 +303,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = eventsTable,
+                Table = eventsList.DataTableConstruct,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -242,6 +314,12 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
+            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Name"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Name.ToString();
+            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["TimeStamp"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.TimeStamp.ToString();
+            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Kubernetes Type"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Type.ToString();
+            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Action"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Action.ToString();
+
+
             namespacesTab = new TabView.Tab($" Namespaces ", namespaceTableView);
             podsTab = new TabView.Tab($" Pods ", podsTableView);
             servicesTab = new TabView.Tab($" Services ", servicesTableView);
@@ -261,21 +339,27 @@ namespace k8config
                 {
                     case ustring a when a.ToLower().Contains("namespace"):
                         UpdateMessageBar("Namespaces selected");
+                        statusBar.Items = realtimeStatusBarNamespacesSelected;
                         break;
                     case ustring a when a.ToLower().Contains("pod"):
                         UpdateMessageBar("Pods selected");
+                        statusBar.Items = realtimeStatusBarPodsSelected;
                         break;
                     case ustring a when a.ToLower().Contains("service"):
                         UpdateMessageBar("Services selected");
+                        statusBar.Items = realtimeStatusBarServicesSelected;
                         break;
                     case ustring a when a.ToLower().Contains("deployment"):
                         UpdateMessageBar("Deployments selected");
+                        statusBar.Items = realtimeStatusBarDeploymentsSelected;
                         break;
                     case ustring a when a.ToLower().Contains("replica"):
                         UpdateMessageBar("ReplicSets selected");
+                        statusBar.Items = realtimeStatusBarRepSetsSelected;
                         break;
                     case ustring a when a.ToLower().Contains("events"):
                         UpdateMessageBar("Events selected");
+                        statusBar.Items = realtimeStatusBarEventsSelected;
                         break;
                 };
             };
@@ -287,7 +371,13 @@ namespace k8config
             realtimeModeWindow.Add(busyWorkingWindow);
 
             availableContextsWindow.Add(availableContextsListView);
+            rawYAMLWindow.Add(rawYAMLListView);
+            closeRAWWindowButton.Clicked += () =>
+            {
+                rawYAMLWindow.Visible = false;
 
+            };
+            realtimeModeWindow.Add(rawYAMLWindow);
 
             try
             {

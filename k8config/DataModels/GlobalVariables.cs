@@ -6,8 +6,9 @@ namespace k8config.DataModels
 {
     public static class GlobalVariables
     {
+        public static string k8configVersion = "k8config v1.0.0";
         public static JObject availbleDefinitions;
-        public static List<string> promptArray = new List<string>() { "k8config" };
+        public static List<string> promptArray = new List<string>() { "yaml" };
         public static List<SourceGroupType> groupSourceKinds = new List<SourceGroupType>();
         public static List<TargetGroupType> groupTargetKinds = new List<TargetGroupType>();
         public static List<string> ignoreProperties = new List<string>() { "kind", "apiVersion", "status" };
