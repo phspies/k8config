@@ -25,6 +25,31 @@ namespace k8config
             {
                 definedYAMLListView.SetSourceAsync(new List<string>());
             }
+            if (GlobalVariables.promptArray.Count > 2)
+            {
+                string startObject = ((List<string>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray[2]));
+                int startIndex = definedYAMLListView.Source.ToList().IndexOf(startObject);
+                for (int x = 2; x > (GlobalVariables.promptArray.Count-1); x++)
+                {
+                    if (int.TryParse(GlobalVariables.promptArray[x], out _))
+                    {
+                        continue;
+                    }
+                }
+            }
+            var currentListObect = ((List<String>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray.Last()));
+            if (!string.IsNullOrWhiteSpace(currentListObect))
+            {
+                definedYAMLListView.SelectedItem = definedYAMLListView.Source.ToList().IndexOf(currentListObect);
+            }
+            else
+            {
+                currentListObect = ((List<String>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray[GlobalVariables.promptArray.Count - 2]));
+                if (!string.IsNullOrWhiteSpace(currentListObect))
+                {
+                    definedYAMLListView.SelectedItem = definedYAMLListView.Source.ToList().IndexOf(currentListObect);
+                }
+            }
         }
     }
 }

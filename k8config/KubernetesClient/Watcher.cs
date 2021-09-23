@@ -1,5 +1,8 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,9 +49,9 @@ namespace k8s
         private readonly CancellationTokenSource _cts;
         private readonly Func<Task<TextReader>> _streamReaderCreator;
 
-        private TextReader _streamReader;
         private bool disposedValue;
         private readonly Task _watcherLoop;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Watcher{T}"/> class.
@@ -88,15 +91,16 @@ namespace k8s
         /// <param name="onClosed">
         /// The action to invoke when the server closes the connection.
         /// </param>
-        public Watcher(Func<Task<TextReader>> streamReaderCreator, Action<WatchEventType, T> onEvent, Action<Exception> onError, 
-            Action onClosed = null, CancellationToken _cts = default(CancellationToken))
+        public Watcher(Func<Task<TextReader>> streamReaderCreator, Action<WatchEventType, T> onEvent,
+            Action<Exception> onError, Action onClosed = null)
         {
             _streamReaderCreator = streamReaderCreator;
             OnEvent += onEvent;
             OnError += onError;
             OnClosed += onClosed;
 
-            _watcherLoop = Task.Run(async () => await WatcherLoop(_cts).ConfigureAwait(false));
+            _cts = new CancellationTokenSource();
+            _watcherLoop = Task.Run(async () => await WatcherLoop(_cts.Token).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -110,7 +114,7 @@ namespace k8s
         public event Action<Exception> OnError;
 
         /// <summary>
-        /// The event which is raised when the server closes th econnection.
+        /// The event which is raised when the server closes the connection.
         /// </summary>
         public event Action OnClosed;
 
@@ -126,40 +130,16 @@ namespace k8s
             try
             {
                 Watching = true;
-                string line;
-                _streamReader = await _streamReaderCreator().ConfigureAwait(false);
 
-                // ReadLineAsync will return null when we've reached the end of the stream.
-                while ((line = await _streamReader.ReadLineAsync().ConfigureAwait(false)) != null)
+                await foreach (var (t, evt) in CreateWatchEventEnumerator(_streamReaderCreator, OnError,cancellationToken).ConfigureAwait(false)
+                )
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        return;
-                    }
-
-                    try
-                    {
-                        var genericEvent =
-                            SafeJsonConvert.DeserializeObject<Watcher<KubernetesObject>.WatchEvent>(line);
-
-                        if (genericEvent.Object.Kind == "Status")
-                        {
-                            var statusEvent = SafeJsonConvert.DeserializeObject<Watcher<V1Status>.WatchEvent>(line);
-                            var exception = new KubernetesException(statusEvent.Object);
-                            OnError?.Invoke(exception);
-                        }
-                        else
-                        {
-                            var @event = SafeJsonConvert.DeserializeObject<WatchEvent>(line);
-                            OnEvent?.Invoke(@event.Type, @event.Object);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        // error if deserialized failed or onevent throws
-                        OnError?.Invoke(e);
-                    }
+                    OnEvent?.Invoke(t, evt);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
             }
             catch (Exception e)
             {
@@ -173,6 +153,67 @@ namespace k8s
             }
         }
 
+        internal static async IAsyncEnumerable<(WatchEventType, T)> CreateWatchEventEnumerator(
+            Func<Task<TextReader>> streamReaderCreator,
+            Action<Exception> onError = null,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            Task<TR> AttachCancellationToken<TR>(Task<TR> task)
+            {
+                if (!task.IsCompleted)
+                {
+                    // here to pass cancellationToken into task
+                    return task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
+                }
+
+                return task;
+            }
+
+            using var streamReader = await AttachCancellationToken(streamReaderCreator()).ConfigureAwait(false);
+
+            for (; ; )
+            {
+                // ReadLineAsync will return null when we've reached the end of the stream.
+                var line = await AttachCancellationToken(streamReader.ReadLineAsync()).ConfigureAwait(false);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (line == null)
+                {
+                    yield break;
+                }
+
+                WatchEvent @event = null;
+
+                try
+                {
+                    var genericEvent = SafeJsonConvert.DeserializeObject<Watcher<KubernetesObject>.WatchEvent>(line);
+
+                    if (genericEvent.Object.Kind == "Status")
+                    {
+                        var statusEvent = SafeJsonConvert.DeserializeObject<Watcher<V1Status>.WatchEvent>(line);
+                        var exception = new KubernetesException(statusEvent.Object);
+                        onError?.Invoke(exception);
+                    }
+                    else
+                    {
+                        @event = SafeJsonConvert.DeserializeObject<WatchEvent>(line);
+                    }
+                }
+                catch (Exception e)
+                {
+                    onError?.Invoke(e);
+                }
+
+
+                if (@event != null)
+                {
+                    yield return (@event.Type, @event.Object);
+                }
+            }
+        }
+
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -181,7 +222,6 @@ namespace k8s
                 {
                     _cts?.Cancel();
                     _cts?.Dispose();
-                    _streamReader?.Dispose();
                 }
 
                 disposedValue = true;

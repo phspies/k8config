@@ -15,19 +15,21 @@ namespace k8config
             if (GlobalVariables.displayMode == 0)
             {
                 GlobalVariables.displayMode = 1;
-                InteractiveModeWindow.Visible = false;
+                YAMLModeWindow.Visible = false;
                 statusBar.Items = realtimeStatusBarItems;
                 realtimeModeWindow.Visible = true;
+                UpdateStatusBar();
                 StartWatchersTasks();
             }
             else
             {
-                CancelAllWatchers();
+                DisposeAllWatchers();
                 GlobalVariables.displayMode = 0;
-                InteractiveModeWindow.Visible = true;
+                YAMLModeWindow.Visible = true;
                 realtimeModeWindow.Visible = false;
                 statusBar.Items = interactiveStatusBarItems;
                 commandPromptTextField.SetFocus();
+                updateAvailableKindsList();
                 //UpdateDescriptionView();
             }
         }

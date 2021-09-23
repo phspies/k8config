@@ -15,6 +15,8 @@ namespace k8config
             commandPromptLabel.Text = string.Join(":", GlobalVariables.promptArray) + ">";
             commandPromptLabel.Width = commandPromptLabel.Text.Count() + 1;
             commandPromptTextField.X = Pos.Right(commandPromptLabel);
+       
+
         }
     }
 }

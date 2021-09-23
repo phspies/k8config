@@ -10,11 +10,11 @@ namespace k8config
     {
         public static void UpdateTabHeaders()
         {
-            //namespacesTab.Text = $" Namespaces ({namespacesList.ListConstruct.Count}) ";
+            namespacesTab.Text = $" Namespaces ({namespacesList.Dictionary.Count}) ";
             podsTab.Text = $" Pods ({podsList.Dictionary.Count}) ";
-            //servicesTab.Text = $" Services ({servicesTableView.Table.Rows.Count}) ";
+            servicesTab.Text = $" Services ({servicesList.Dictionary.Count}) ";
             deploymentsTab.Text = $" Deployments ({deploymentsList.Dictionary.Count}) ";
-            //replicasetsTab.Text = $" Replica Sets ({replicasetsTableView.Table.Rows.Count}) ";
+            replicasetsTab.Text = $" Replica Sets ({replicasetsList.Dictionary.Count}) ";
             eventsTab.Text = $" Events ({eventsList.DataTableConstruct.Rows.Count}) ";
 
             //move table down to the latest entry

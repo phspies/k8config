@@ -19,7 +19,7 @@ namespace k8s
     /// </summary>
     public static class Yaml
     {
-        private static readonly IDeserializer Deserializer =
+        public static readonly IDeserializer Deserializer =
             new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .WithTypeConverter(new IntOrStringYamlConverter())

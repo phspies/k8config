@@ -1,8 +1,8 @@
 using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using k8s.Exceptions;
-using Microsoft.Extensions.Primitives;
 using Microsoft.Rest;
 
 namespace k8s
@@ -25,20 +25,24 @@ namespace k8s
             this Task<HttpOperationResponse<L>> responseTask,
             Action<WatchEventType, T> onEvent,
             Action<Exception> onError = null,
-            Action onClosed = null, CancellationToken ctx = default(CancellationToken))
+            Action onClosed = null)
         {
-            return new Watcher<T>(
-                async () =>
+            return new Watcher<T>(MakeStreamReaderCreator<T, L>(responseTask), onEvent, onError, onClosed);
+        }
+
+        private static Func<Task<TextReader>> MakeStreamReaderCreator<T, L>(Task<HttpOperationResponse<L>> responseTask)
+        {
+            return async () =>
             {
                 var response = await responseTask.ConfigureAwait(false);
 
-                if (!(response.Response.Content is WatcherDelegatingHandler.LineSeparatedHttpContent content))
+                if (!(response.Response.Content is LineSeparatedHttpContent content))
                 {
                     throw new KubernetesClientException("not a watchable request or failed response");
                 }
 
                 return content.StreamReader;
-            }, onEvent, onError, onClosed, ctx);
+            };
         }
 
         /// <summary>
@@ -57,9 +61,16 @@ namespace k8s
             this HttpOperationResponse<L> response,
             Action<WatchEventType, T> onEvent,
             Action<Exception> onError = null,
-            Action onClosed = null, CancellationToken ctx = default(CancellationToken))
+            Action onClosed = null)
         {
-            return Watch(Task.FromResult(response), onEvent, onError, onClosed, ctx);
+            return Watch(Task.FromResult(response), onEvent, onError, onClosed);
+        }
+
+        public static IAsyncEnumerable<(WatchEventType, T)> WatchAsync<T, L>(
+            this Task<HttpOperationResponse<L>> responseTask,
+            Action<Exception> onError = null)
+        {
+            return Watcher<T>.CreateWatchEventEnumerator(MakeStreamReaderCreator<T, L>(responseTask), onError);
         }
     }
 }

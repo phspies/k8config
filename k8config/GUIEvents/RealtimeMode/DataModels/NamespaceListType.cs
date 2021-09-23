@@ -1,6 +1,7 @@
 ﻿using k8config.Utilities;
 using k8s.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -13,76 +14,63 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
 {
     public class NamespaceListType
     {
-        private List<NamespaceType> List;
+        private MemberInfo[] Members { get { return typeof(NamespaceType).GetMembers().Where(x => x.GetCustomAttribute(typeof(DataNameAttribute), false) != null).ToArray(); } }
+        public DataTable DataTable = new DataTable();
+        public ConcurrentDictionary<long, NamespaceType> Dictionary = new ConcurrentDictionary<long, NamespaceType>();
+
         public NamespaceListType()
         {
-            List = new List<NamespaceType>();
-        }
-        public void AddChange(NamespaceType newObject)
-        {
-            if (List.Any(x => x.Name == newObject.Name))
+            DataTable.TableName = typeof(NamespaceType).FullName;
+            foreach (MemberInfo info in Members)
             {
-                lock (List)
-                {
-                    NamespaceType temp = List.Find(x => x.Name == newObject.Name);
-                    temp = newObject;
-                }
-            }
-            else
-            {
-                lock (List)
-                {
-                    List.Add(newObject);
-                }
-            }
-        }
-        public DataTable CreateDataTable()
-        {
-            var properties = typeof(NamespaceType).GetProperties();
-            DataTable dataTable = new DataTable();
-            dataTable.TableName = typeof(NamespaceType).FullName;
-            foreach (PropertyInfo info in properties)
-            {
-                DataColumn newColumn = new DataColumn((info.GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, Nullable.GetUnderlyingType(info.PropertyType) ?? info.PropertyType);
-                if (newColumn.ColumnName == "RawObject")
+                DataNameAttribute customerAttributes = info.GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute;
+                DataColumn newColumn = new DataColumn(customerAttributes.Column, typeof(long));
+                if (customerAttributes.Visible == false)
                 {
                     newColumn.ColumnMapping = MappingType.Hidden;
                 }
-                dataTable.Columns.Add(newColumn);
+                DataTable.Columns.Add(newColumn);
             }
-            return dataTable;
         }
-        public DataTable ToDataTable()
+        public void AddUpdateDelete(NamespaceType newObject, CRUDOperation _operation)
         {
-            var properties = typeof(NamespaceType).GetProperties();
-            DataTable dataTable = CreateDataTable();
-            Sort().ForEach(entity =>
+            NamespaceType temp;
+            var Index = Dictionary.FirstOrDefault(x => x.Value.Name == newObject.Name);
+            switch (_operation)
             {
-                    DataRow _row = dataTable.NewRow();
-                    for (int i = 0; i < properties.Length; i++)
+                case CRUDOperation.Add:
+                    if (Index.Value == null)
                     {
-                        _row.SetField((properties[i].GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, properties[i].GetValue(entity));
-
+                        newObject.Index = Dictionary.Count > 0 ? Dictionary.Max(x => x.Key) + 1 : 0;
+                        Dictionary.TryAdd(newObject.Index, newObject);
                     }
-                    dataTable.Rows.Add(_row);
-            });
-            return dataTable;
-        }
-        public void Delete(NamespaceType removeObject)
-        {
-            if (List.Any(x => x.Name == removeObject.Name))
-            {
-                lock (List)
-                {
-                    List.Remove(removeObject);
-                }
+                    break;
+                case CRUDOperation.Change:
+                    if (Index.Value != null && Dictionary.TryGetValue(Index.Key, out temp))
+                    {
+                        newObject.Index = Index.Key;
+                        Dictionary.TryUpdate(newObject.Index, newObject, temp);
+                    }
+                    break;
+                case CRUDOperation.Delete:
+                    if (Index.Value != null && Dictionary.TryGetValue(Index.Key, out temp))
+                    {
+                        Dictionary.TryRemove(Index.Key, out temp);
+                    }
+                    break;
             }
-        }
-        public List<NamespaceType> Sort()
-        {
-            lock (List)
+            lock (DataTable.Rows.SyncRoot)
             {
-                return new List<NamespaceType>(List.OrderByDescending(x => x.Name).ToList());
+                DataTable.Rows.Clear();
+                (from x in Dictionary orderby x.Value.Name select x).ToList().ForEach(record =>
+                {
+                    DataRow _row = DataTable.NewRow();
+                    for (int i = 0; i < Members.Length; i++)
+                    {
+                        _row.SetField((Members[i].GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, record.Key);
+                    }
+                    DataTable.Rows.Add(_row);
+                });
             }
         }
     }
@@ -95,15 +83,15 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
             Age = DateTimeExtensions.GetPrettyDate(_namespace.Metadata.CreationTimestamp ?? DateTime.Now);
             RawObject = _namespace;
         }
+        [DataName("Index", false)]
+        public long Index { get; set; }
         [DataName("Name")]
         public string Name { get; set; }
-
         [DataName("Status")]
         public string Status { get; set; }
-
         [DataName("Age")]
         public string Age { get; set; }
-        [DataName("RawObject")]
+        [DataName("RawObject", false)]
         public object RawObject { get; set; }
     }
 }

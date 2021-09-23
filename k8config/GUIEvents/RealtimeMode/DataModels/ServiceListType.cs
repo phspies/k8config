@@ -1,6 +1,7 @@
 ﻿using k8config.Utilities;
 using k8s.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -10,76 +11,63 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
 {
     public class ServiceListType
     {
-        private List<ServiceType> List;
+        private MemberInfo[] Members { get { return typeof(ServiceType).GetMembers().Where(x => x.GetCustomAttribute(typeof(DataNameAttribute), false) != null).ToArray(); } }
+        public DataTable DataTable = new DataTable();
+        public ConcurrentDictionary<long, ServiceType> Dictionary = new ConcurrentDictionary<long, ServiceType>();
+
         public ServiceListType()
         {
-            List = new List<ServiceType>();
-        }
-        public void AddChange(ServiceType newObject)
-        {
-            if (List.Any(x => x.Name == newObject.Name))
+            DataTable.TableName = typeof(ServiceType).FullName;
+            foreach (MemberInfo info in Members)
             {
-                lock (List)
-                {
-                    ServiceType temp = List.Find(x => x.Name == newObject.Name);
-                    temp = newObject;
-                }
-            }
-            else
-            {
-                lock (List)
-                {
-                    List.Add(newObject);
-                }
-            }
-        }
-        public DataTable CreateDataTable()
-        {
-            var properties = typeof(ServiceType).GetProperties();
-            DataTable dataTable = new DataTable();
-            dataTable.TableName = typeof(ServiceType).FullName;
-            foreach (PropertyInfo info in properties)
-            {
-                DataColumn newColumn = new DataColumn((info.GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, Nullable.GetUnderlyingType(info.PropertyType) ?? info.PropertyType);
-                if (newColumn.ColumnName == "RawObject")
+                DataNameAttribute customerAttributes = info.GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute;
+                DataColumn newColumn = new DataColumn(customerAttributes.Column, typeof(long));
+                if (customerAttributes.Visible == false)
                 {
                     newColumn.ColumnMapping = MappingType.Hidden;
                 }
-                dataTable.Columns.Add(newColumn);
-            }
-            return dataTable;
-        }
-        public DataTable ToDataTable()
-        {
-            var properties = typeof(ServiceType).GetProperties();
-            DataTable dataTable = CreateDataTable();
-            Sort().ForEach(entity =>
-            {
-                DataRow _row = dataTable.NewRow();
-                for (int i = 0; i < properties.Length; i++)
-                {
-                    _row.SetField((properties[i].GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, properties[i].GetValue(entity));
-
-                }
-                dataTable.Rows.Add(_row);
-            });
-            return dataTable;
-        }
-        public void Delete(ServiceType removeObject)
-        {
-            if (List.Any(x => x.Name == removeObject.Name))
-            {
-                lock (List)
-                {
-                    List.Remove(removeObject);
-                }
+                DataTable.Columns.Add(newColumn);
             }
         }
-        public List<ServiceType> Sort()
+        public void AddUpdateDelete(ServiceType newObject, CRUDOperation _operation)
         {
-            lock (List)
+            ServiceType temp;
+            var Index = Dictionary.FirstOrDefault(x => x.Value.Name == newObject.Name);
+            switch (_operation)
             {
-                return new List<ServiceType>(List.OrderByDescending(x => x.Name).ToList());
+                case CRUDOperation.Add:
+                    if (Index.Value == null)
+                    {
+                        newObject.Index = Dictionary.Count > 0 ? Dictionary.Max(x => x.Key) + 1 : 0;
+                        Dictionary.TryAdd(newObject.Index, newObject);
+                    }
+                    break;
+                case CRUDOperation.Change:
+                    if (Index.Value != null && Dictionary.TryGetValue(Index.Key, out temp))
+                    {
+                        newObject.Index = Index.Key;
+                        Dictionary.TryUpdate(newObject.Index, newObject, temp);
+                    }
+                    break;
+                case CRUDOperation.Delete:
+                    if (Index.Value != null && Dictionary.TryGetValue(Index.Key, out temp))
+                    {
+                        Dictionary.TryRemove(Index.Key, out temp);
+                    }
+                    break;
+            }
+            lock (DataTable.Rows.SyncRoot)
+            {
+                DataTable.Rows.Clear();
+                (from x in Dictionary orderby x.Value.Namespace, x.Value.Name select x).ToList().ForEach(record =>
+                {
+                    DataRow _row = DataTable.NewRow();
+                    for (int i = 0; i < Members.Length; i++)
+                    {
+                        _row.SetField((Members[i].GetCustomAttribute(typeof(DataNameAttribute), false) as DataNameAttribute).Column, record.Key);
+                    }
+                    DataTable.Rows.Add(_row);
+                });
             }
         }
     }
@@ -96,6 +84,8 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
             Age = DateTimeExtensions.GetPrettyDate(_service.Metadata.CreationTimestamp ?? DateTime.Now);
             RawObject = _service;
         }
+        [DataName("Index", false)]
+        public long Index { get; set; }
         [DataName("Namespace")]
         public string Namespace { get; set; }
         [DataName("Name")]
@@ -110,7 +100,7 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
         public string Ports { get; set; }
         [DataName("Age")]
         public string Age { get; set; }
-        [DataName("RawObject")]
+        [DataName("RawObject", false)]
         public object RawObject { get; set; }
     }
 }

@@ -4,7 +4,6 @@ using k8config.GUIEvents.RealtimeMode.DataModels;
 using k8s;
 using NStack;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -16,68 +15,92 @@ namespace k8config
     {
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarPodsSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    PodType pod = podsList.Dictionary.FirstOrDefault(x => x.Key == long.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["Index"].ToString())).Value;
-                    RAWYamlView(pod?.Name, pod?.RawObject);
+                    RAWYamlView(podsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["RawObject"].ToString())).Value);
                 }),
+                new StatusItem(Key.F8, "~F8~ Import", () =>
+                {
+                    ImportDefinition(podsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
+                }),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarServicesSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    DataRow row =servicesTableView.Table.Select()[servicesTableView.SelectedRow];
-                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                    RAWYamlView(servicesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(servicesTableView.Table.Select()[servicesTableView.SelectedRow]["RawObject"].ToString())).Value);
                 }),
+                new StatusItem(Key.F8, "~F8~ Import", () =>
+                {
+                    ImportDefinition(servicesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(servicesTableView.Table.Select()[servicesTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
+                }),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarDeploymentsSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    DataRow row =deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow];
-                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                    RAWYamlView(deploymentsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow]["RawObject"].ToString())).Value);
                 }),
+                new StatusItem(Key.F8, "~F8~ Import", () =>
+                {
+                    ImportDefinition(deploymentsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
+                }),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarNamespacesSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    DataRow row =namespaceTableView.Table.Select()[namespaceTableView.SelectedRow];
-                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                    RAWYamlView(namespacesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(namespaceTableView.Table.Select()[namespaceTableView.SelectedRow]["RawObject"].ToString())).Value);
                 }),
+                new StatusItem(Key.F8, "~F8~ Import", () =>
+                {
+                    ImportDefinition(namespacesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(namespaceTableView.Table.Select()[namespaceTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
+                }),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarRepSetsSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    DataRow row =replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow];
-                    RAWYamlView(row["Name"].ToString(), row["RawObject"]);
+                    RAWYamlView(replicasetsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow]["RawObject"].ToString())).Value);
                 }),
+                new StatusItem(Key.F8, "~F8~ Import", () =>
+                {
+                    ImportDefinition(replicasetsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
+
+                }),
+                new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static StatusItem[] realtimeStatusBarEventsSelected = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
-                new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
-                {
-                    DataRow eventRecord = eventsList.DataTableConstruct.Rows[eventsTableView.SelectedRow];
-                    RAWYamlView(eventRecord["Name"].ToString(), eventRecord["RawObject"]);
-                }),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => ToggleDisplayMode()),
-                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+                new StatusItem (Key.CharMask, GlobalVariables.k8configVersion, null, false, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray)),
+                new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         static Window availableContextsWindow = new Window();
         static ListView availableContextsListView = new ListView();
@@ -155,14 +178,26 @@ namespace k8config
             X = 2,
             Y = 1
         };
-
+        static Button closeApplyWindowButton = new Button("Close", true);
+        static Dialog ApplyStatusWindow = new Dialog("Apply Definition Status", 80, 40, closeApplyWindowButton)
+        {
+            Visible = false,
+            X = Pos.Center(),
+            Y = Pos.Center(),
+        };
+        static List<string> applyStatusList = new List<string>();
+        static ListView applyListView = new ListView(applyStatusList)
+        {
+            X = 2,
+            Y = 1
+        };
 
         static public void RealTimeMode()
         {
-            topLevelWindowObject.Add(InteractiveModeWindow);
+            topLevelWindowObject.Add(YAMLModeWindow);
             k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
 
-            TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = false, ShowVerticalCellLines = false, ShowVerticalHeaderLines = false, ExpandLastColumn = false };
+            TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = true, ShowVerticalCellLines = true, ShowVerticalHeaderLines = true, ExpandLastColumn = false };
 
             availableContextsWindow = new Window()
             {
@@ -198,7 +233,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = namespacesList.ToDataTable(),
+                Table = namespacesList.DataTable,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -241,7 +276,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = servicesList.ToDataTable(),
+                Table = servicesList.DataTable,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -283,7 +318,7 @@ namespace k8config
                 FullRowSelect = true,
                 LayoutStyle = LayoutStyle.Computed,
                 Style = tableStyle,
-                Table = replicasetsList.ToDataTable(),
+                Table = replicasetsList.DataTable,
                 Border = new Border()
                 {
                     BorderStyle = BorderStyle.None,
@@ -314,10 +349,20 @@ namespace k8config
                 TabStop = true,
                 ColorScheme = colorSelector
             };
-            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Name"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Name.ToString();
-            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["TimeStamp"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.TimeStamp.ToString();
-            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Kubernetes Type"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Type.ToString();
-            //eventsTableView.Style.GetOrCreateColumnStyle(eventsList.DataTableConstruct.Columns["Action"]).RepresentationGetter = (i) => eventsList.DictionaryConstruct.FirstOrDefault(x => x.Key == (long)i).Value.Action.ToString();
+
+
+            ApplyStatusWindow.Add(applyListView);
+
+            ApplyStatusWindow.Height = Dim.Fill() - 10;
+            ApplyStatusWindow.Width = Dim.Fill() - 10;
+            applyListView.Width = Dim.Fill() - 2;
+            applyListView.Height = Dim.Fill() - 4;
+
+            closeApplyWindowButton.Clicked += () =>
+            {
+                ApplyStatusWindow.Visible = false;
+
+            };
 
 
             namespacesTab = new TabView.Tab($" Namespaces ", namespaceTableView);
@@ -335,33 +380,7 @@ namespace k8config
             contextDetailTabs.ColorScheme = colorSelector;
             contextDetailTabs.SelectedTabChanged += (s, e) =>
             {
-                switch (e.NewTab.Text)
-                {
-                    case ustring a when a.ToLower().Contains("namespace"):
-                        UpdateMessageBar("Namespaces selected");
-                        statusBar.Items = realtimeStatusBarNamespacesSelected;
-                        break;
-                    case ustring a when a.ToLower().Contains("pod"):
-                        UpdateMessageBar("Pods selected");
-                        statusBar.Items = realtimeStatusBarPodsSelected;
-                        break;
-                    case ustring a when a.ToLower().Contains("service"):
-                        UpdateMessageBar("Services selected");
-                        statusBar.Items = realtimeStatusBarServicesSelected;
-                        break;
-                    case ustring a when a.ToLower().Contains("deployment"):
-                        UpdateMessageBar("Deployments selected");
-                        statusBar.Items = realtimeStatusBarDeploymentsSelected;
-                        break;
-                    case ustring a when a.ToLower().Contains("replica"):
-                        UpdateMessageBar("ReplicSets selected");
-                        statusBar.Items = realtimeStatusBarRepSetsSelected;
-                        break;
-                    case ustring a when a.ToLower().Contains("events"):
-                        UpdateMessageBar("Events selected");
-                        statusBar.Items = realtimeStatusBarEventsSelected;
-                        break;
-                };
+                UpdateStatusBar();
             };
 
             topLevelWindowObject.Add(realtimeModeWindow);
@@ -389,6 +408,7 @@ namespace k8config
             }
             realtimeModeKeyEvents();
 
+            realtimeModeWindow.Add(ApplyStatusWindow);
 
             //.BuildConfigFromConfigFile();
             //config.SkipTlsVerify = true;

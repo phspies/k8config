@@ -12,7 +12,7 @@ namespace k8config
 {
     partial class Program
     {
-        static Window InteractiveModeWindow = new Window()
+        static Window YAMLModeWindow = new Window()
         {
             Border = new Border()
             {
@@ -34,7 +34,6 @@ namespace k8config
         static ListView definedYAMLListView = new ListView();
         static Window descriptionWindow = new Window();
         static TextView descriptionView = new TextView();
-        //static Label messageBarItem = new Label();
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ Validate", () => {
@@ -65,7 +64,8 @@ namespace k8config
                     closeWarnWindowButton.SetFocus();
                 }),
                 new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); }),
-               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightYellow, Color.DarkGray))
+               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+
             };
 
         static public void YAMLMode()
@@ -150,6 +150,7 @@ namespace k8config
                 AllowsMarking = false,
                 CanFocus = false,
                 TabStop = false,
+                ColorScheme = colorSelector,
 
             };
             definedYAMLWindow.Add(definedYAMLListView);
@@ -167,13 +168,13 @@ namespace k8config
             };
 
             availableKindsWindow.Add(availableKindsListView);
-            InteractiveModeWindow.Add(commandWindow, definedYAMLWindow);
-            InteractiveModeWindow.Add(availableKindsWindow);
+            YAMLModeWindow.Add(commandWindow, definedYAMLWindow);
+            YAMLModeWindow.Add(availableKindsWindow);
             //commandWindow.Add(messageBarItem);
             descriptionWindow.Add(descriptionView);
-            InteractiveModeWindow.Add(descriptionWindow);
+            YAMLModeWindow.Add(descriptionWindow);
             commandWindow.Add(commandPromptLabel, commandPromptTextField);
-            topLevelWindowObject.Add(InteractiveModeWindow);
+            topLevelWindowObject.Add(YAMLModeWindow);
 
             ToggleDisplayMode();
 

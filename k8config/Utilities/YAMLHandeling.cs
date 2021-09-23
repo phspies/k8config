@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8s;
 using k8s.Models;
 using System;
 using System.Collections.Generic;
@@ -17,8 +18,9 @@ namespace k8config.Utilities
     public static class YAMLHandeling
     {
         public static void DeserializeFile(string fileLocation)
-        { 
-            var reader = new Parser(new StreamReader(fileLocation));
+        {
+            var stream = new StreamReader(fileLocation);
+            var reader = new Parser(stream);
             reader.Consume<StreamStart>();
             DocumentStart outdocument;
             GlobalVariables.sessionDefinedKinds = new List<SessionDefinedKind>();
@@ -39,13 +41,14 @@ namespace k8config.Utilities
                                 index = index,
                                 kind = dict["kind"] as string,
                                 name = dict["kind"] as string,
-                                KubeObject = Newtonsoft.Json.JsonConvert.DeserializeObject(Newtonsoft.Json.JsonConvert.SerializeObject(tempExpandoObject), Type.GetType(_type.assemblyFullName))
-                            });
+                                KubeObject = Yaml.Deserializer.Deserialize(Newtonsoft.Json.JsonConvert.SerializeObject(tempExpandoObject), Type.GetType(_type.assemblyFullName))
+                            });;
                             index++;
                         }
                     }
                 }
             }
+            stream.Close();
         }
         public static void SerializeToFile(string filePath)
         {
@@ -55,10 +58,11 @@ namespace k8config.Utilities
             {
                 foreach (object _kubeobject in GlobalVariables.sessionDefinedKinds.Select(x => x.KubeObject))
                 {
-                    serializer.Serialize(sw, _kubeobject);
+                    Yaml.YAMLSerializer.Serialize(sw, _kubeobject);
                     if (!_kubeobject.Equals(GlobalVariables.sessionDefinedKinds.Last().KubeObject))
                         sw.WriteLine("---");
                 }
+                
             }
         }
     }

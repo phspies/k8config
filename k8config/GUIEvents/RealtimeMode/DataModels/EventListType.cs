@@ -1,6 +1,7 @@
 ﻿using AutoMapper.Internal;
 using k8config.Utilities;
 using k8s;
+using k8s.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -67,104 +68,26 @@ namespace k8config.GUIEvents.RealtimeMode.DataModels
             return dataTable;
         }
     }
-    public class EventType : INotifyPropertyChanged
+    public class EventType
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private long index = long.MinValue;
-        private string name = string.Empty;
-        private object privateObject = null;
-        private DateTime timeStamp = DateTime.MinValue;
-        private string action = string.Empty;
-        private string type = string.Empty;
-
         public EventType(WatchEventType _eventType, object _object)
         {
             TimeStamp = DateTime.Now;
             Action = _eventType.ToString();
             RawObject = _object;
-            Name = _object.GetNestedPropertyValue("Metadata.Name")?.ToString();
+            Name = ((IKubernetesObject<V1ObjectMeta>)_object).Metadata.Name;
+            Type = ((IKubernetesObject<V1ObjectMeta>)RawObject).Kind;
         }
-
        
         [DataName(column: "TimeStamp", visible: true)]
-        public DateTime TimeStamp
-        {
-            get
-            {
-                return this.timeStamp;
-            }
-            set
-            {
-                if (value != this.timeStamp)
-                {
-                    this.timeStamp = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
+        public DateTime TimeStamp { get; set; }
         [DataName(column: "Name", visible: true)]
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-            set
-            {
-                if (value != this.name)
-                {
-                    this.name = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
+        public string Name { get; set; }
         [DataName(column: "Kubernetes Type", visible: true)]
-        public string Type
-        {
-            get { return privateObject.GetType().Name.Split(".").Last().Replace("V1", "").ToString(); }
-            private set { }
-        }
+        public string Type { get; set; }
         [DataName(column: "Action", visible: true)]
-        public string Action
-        {
-            get
-            {
-                return this.action;
-            }
-            set
-            {
-                if (value != this.action)
-                {
-                    this.action = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
+        public string Action { get; set; }
         [DataName(column: "RawObject", visible: false)]
-        public object RawObject
-        {
-            get
-            {
-                return this.privateObject;
-            }
-
-            set
-            {
-                if (value != this.privateObject)
-                {
-                    this.privateObject = value;
-                    NotifyPropertyChanged();
-                }
-            }
-        }
-
-        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
+        public object RawObject { get; set; }
     }
 }

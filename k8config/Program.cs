@@ -1,5 +1,7 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
+using k8s;
+using k8s.Models;
 using NLog;
 using System;
 using System.Runtime.InteropServices;
@@ -60,14 +62,9 @@ namespace k8config
 
             updateAvailableKindsList();
 
-            //run the GUI
             Application.Run(topLevelWindowObject);
 
         }
-
-
-
-
 
         static void AddToPrompt(string _promptString)
         {
