@@ -3,6 +3,7 @@ using k8config.Utilities;
 using k8s.Models;
 using System;
 using System.Linq;
+using System.Web;
 
 namespace k8config
 {
@@ -18,7 +19,7 @@ namespace k8config
             }
             else if (GlobalVariables.promptArray.Count >= 2 && currentKubeType != null && _nestedObject == null)
             {
-                descriptionView.Text = (currentKubeType.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description;
+                descriptionView.Text = HttpUtility.HtmlDecode((currentKubeType.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
             }
             else if (GlobalVariables.promptArray.Count >= 2 && currentKubeType != null && _nestedObject != null)
             {

@@ -3,10 +3,6 @@ using k8s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace k8config
 {
@@ -14,11 +10,17 @@ namespace k8config
     {
         static void paintYAML()
         {
+            List<string> yamlList = new List<string>();
             definedYAMLWindow.Text = "";
             if (GlobalVariables.promptArray.Count() > 1)
             {
                 object currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
-                definedYAMLListView.SetSourceAsync(Yaml.YAMLSerializer.Serialize(currentSelectedKind).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList());
+                yamlList = Yaml.YAMLSerializer.Serialize(currentSelectedKind).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+                if (string.IsNullOrWhiteSpace(yamlList.Last()))
+                {
+                    yamlList.Remove(yamlList.Last());
+                }
+                definedYAMLListView.SetSource(yamlList);
                 definedYAMLWindow.Title = $"{GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1])).kind} YAML";
             }
             else
@@ -27,27 +29,62 @@ namespace k8config
             }
             if (GlobalVariables.promptArray.Count > 2)
             {
-                string startObject = ((List<string>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray[2]));
-                int startIndex = definedYAMLListView.Source.ToList().IndexOf(startObject);
-                for (int x = 2; x > (GlobalVariables.promptArray.Count-1); x++)
+                string startObject = yamlList.Find(x => x.Contains(GlobalVariables.promptArray[2]));
+                int currentIndex = yamlList.IndexOf(startObject) < 1 ? 1 : yamlList.IndexOf(startObject);
+                string[] yamlArray = yamlList.ToArray();
+                List<int> indexArray = new List<int>();
+                for (int x = 2; x < (GlobalVariables.promptArray.Count); x++)
                 {
-                    if (int.TryParse(GlobalVariables.promptArray[x], out _))
+                    int subindex;
+                    if (int.TryParse(GlobalVariables.promptArray[x], out subindex))
                     {
+                        indexArray.Add(subindex);
                         continue;
                     }
-                }
-            }
-            var currentListObect = ((List<String>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray.Last()));
-            if (!string.IsNullOrWhiteSpace(currentListObect))
-            {
-                definedYAMLListView.SelectedItem = definedYAMLListView.Source.ToList().IndexOf(currentListObect);
-            }
-            else
-            {
-                currentListObect = ((List<String>)definedYAMLListView.Source.ToList()).Find(x => x.Contains(GlobalVariables.promptArray[GlobalVariables.promptArray.Count - 2]));
-                if (!string.IsNullOrWhiteSpace(currentListObect))
-                {
-                    definedYAMLListView.SelectedItem = definedYAMLListView.Source.ToList().IndexOf(currentListObect);
+                    else
+                    {
+                        int fallbackIndex = 0;
+                        int i = 0;
+                        while (i != (indexArray.Sum(x => x) + 1))
+                        {
+                            i++;
+                            while (true)
+                            {
+
+                                currentIndex += 1;
+                                if (currentIndex > yamlArray.Length-1)
+                                {
+                                    currentIndex = fallbackIndex;
+                                    break;
+                                }
+                                if (x == 2 && yamlArray[currentIndex].ToLower().StartsWith($"{GlobalVariables.promptArray[x].ToLower()}:"))
+                                {
+                                    fallbackIndex = currentIndex;
+                                    break;
+                                }
+                                else if (x != 2 && yamlArray[currentIndex].ToLower().Contains(GlobalVariables.promptArray[x].ToLower()))
+                                {
+                                    fallbackIndex = currentIndex;
+                                    break;
+                                }
+                                
+                            }
+                        }
+                    }
+                    definedYAMLListView.SelectedItem = currentIndex;
+                    if (currentIndex < 8)
+                    {
+                        definedYAMLListView.TopItem = 0;
+                    }
+                    else
+                    {
+                        definedYAMLListView.TopItem = currentIndex - 5;
+                    }
+
+                    if (currentIndex == yamlArray.Length)
+                    {
+                        break;
+                    }
                 }
             }
         }

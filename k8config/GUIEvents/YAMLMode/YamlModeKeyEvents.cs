@@ -63,6 +63,7 @@ namespace k8config
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
                 string[] args = currentInputText.Trim().Split();
+                List<string> validCompleteCommands = new List<string>() { "no" };
                 if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(currentInputText))
                 {
                     currentavailableListUpDown = false;
@@ -83,7 +84,14 @@ namespace k8config
                         availableKindsListView.SetSource(possibleOptions.ToList());
                         commandPromptTextField.Text = $"{NextAutoComplete(possibleOptions)}";
                         commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
-
+                    }
+                    else if (args.Count() == 2 && args[1] != "" && validCompleteCommands.Exists(x => x == args[0]))
+                    {
+                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1].Trim();
+                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
+                        availableKindsListView.SetSource(possibleOptions.ToList());
+                        commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(possibleOptions)}";
+                        commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
                     }
                     else
                     {
@@ -298,7 +306,7 @@ namespace k8config
                                         UpdateMessageBar($"Value [{args[1]}] entered is not a integer");
                                     }
                                 }
-                                else if (args[0] == "delete")
+                                else if (args[0] == "no")
                                 {
                                     int index = 0;
                                     if (int.TryParse(args[1], out index))
@@ -317,12 +325,31 @@ namespace k8config
                                         }
                                         else
                                         {
-                                            UpdateMessageBar("Item not found");
+                                            UpdateMessageBar($"Item ({index}) not found");
                                         }
                                     }
                                     else
                                     {
-                                        UpdateMessageBar("Value entered is not a integer");
+                                        object currentKubeObject = KubeObject.GetCurrentObject();
+                                        PropertyInfo propertyInfo = currentKubeObject.GetType().GetProperties().FirstOrDefault(x => x.Name.ToLower() == args[1].ToLower());
+                                        if (propertyInfo != null)
+                                        {
+                                            UpdateMessageBar($"Cleared {args[1]} value");
+                                            try
+                                            {
+                                                propertyInfo.SetValue(currentKubeObject, null);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                UpdateMessageBar($"Cannot clear attribute value: {ex.Message}");
+                                            }
+                                            paintYAML();
+                                        }
+                                        else
+                                        {
+                                            UpdateMessageBar($"Attribute {args[1]} not found");
+                                        }
+                                        
                                     }
                                 }
                                 else if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == args[0] && !x.propertyIsList))

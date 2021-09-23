@@ -31,7 +31,7 @@ namespace k8config
                 {
                     tmpAvailableOptions = new List<OptionsSlimType>() {
                             new OptionsSlimType() { name = "new",propertyIsCommand = true, displayType = "create new object" },
-                            new OptionsSlimType() { name = "delete",propertyIsCommand = true, displayType = "delete object" },
+                            new OptionsSlimType() { name = "no",propertyIsCommand = true, displayType = "delete object" },
                             new OptionsSlimType() { name = "select",propertyIsCommand = true, displayType = "select object" },
                             new OptionsSlimType() { name = "list" ,propertyIsCommand = true, displayType = "list current objects" },
                             new OptionsSlimType() { name = "import" ,propertyIsCommand = true, displayType = "Import YAML file" },
@@ -44,24 +44,27 @@ namespace k8config
             }
             if (GlobalVariables.promptArray.Count() == 2)
             {
-                returnHeader = "Available Options";
+                returnHeader = "Available Commands/Options";
                 if (includeCommands)
                 {
                     tmpAvailableOptions = new List<OptionsSlimType>() {
                             new OptionsSlimType() { name = "..", propertyIsCommand = true, displayType = "back one folder" },
-                            new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"}
+                            new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"},
+                            new OptionsSlimType() { name = "no" , propertyIsCommand = true, displayType = "deleted defined property"},
                         };
                 }
                 tmpAvailableOptions.AddRange(GlobalVariables.sessionDefinedKinds[int.Parse(GlobalVariables.promptArray[1]) - 1].KubeObject.RetrieveAttributeValues());
             }
             else if (GlobalVariables.promptArray.Count() > 2)
             {
+                returnHeader = "Available Commands/Options";
                 object tmpObject = KubeObject.GetCurrentObject();
                 if (includeCommands)
                 {
                     tmpAvailableOptions = new List<OptionsSlimType>() {
                             new OptionsSlimType() { name = "..", propertyIsCommand = true, displayType = "back one folder" },
-                            new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"}
+                            new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"},
+                            new OptionsSlimType() { name = "no" , propertyIsCommand = true, displayType = "deleted defined property"},
                         };
                 }
                 if (tmpObject.IsList())
@@ -70,7 +73,7 @@ namespace k8config
                             new OptionsSlimType() { name = "..", propertyIsCommand = true, displayType = "back one folder" },
                             new OptionsSlimType() { name = "/" , propertyIsCommand = true, displayType = "back to root"},
                             new OptionsSlimType() { name = "new",propertyIsCommand = true, displayType = "create new object" },
-                            new OptionsSlimType() { name = "delete",propertyIsCommand = true, displayType = "delete object" },
+                            new OptionsSlimType() { name = "no",propertyIsCommand = true, displayType = "delete object" },
                             new OptionsSlimType() { name = "select",propertyIsCommand = true, displayType = "select object" },
                             new OptionsSlimType() { name = "list" ,propertyIsCommand = true, displayType = "list current objects" }
                         };
@@ -100,7 +103,7 @@ namespace k8config
 
 
                 }
-                if (commandPromptTextField.Text.StartsWith("select") || commandPromptTextField.Text.StartsWith("delete"))
+                if (commandPromptTextField.Text.StartsWith("select") || commandPromptTextField.Text.StartsWith("no"))
                 {
                     if (GlobalVariables.promptArray.Count() == 1)
                     {
