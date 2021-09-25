@@ -195,7 +195,14 @@ namespace k8config
         static public void RealTimeMode()
         {
             topLevelWindowObject.Add(YAMLModeWindow);
-            k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
+            //try
+            //{
+            //    k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
+            //}
+            //catch (Exception e)
+            //{
+            //    Log.Error($"Cannot load kubeconfig: {e.Message}");
+            //}
 
             TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = true, ShowVerticalCellLines = true, ShowVerticalHeaderLines = true, ExpandLastColumn = false };
 

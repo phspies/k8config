@@ -1,6 +1,9 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
+using k8s;
 using k8s.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Org.BouncyCastle.Math.EC.Rfc7748;
 using System;
 using System.Collections;
@@ -19,7 +22,8 @@ namespace k8config.GUIEvents.YAMLMode
             concernList = new List<string>();
             GlobalVariables.sessionDefinedKinds.ForEach(definedKind =>
             {
-                nestedLoopValidation(definedKind.KubeObject, $":{definedKind.index}:{definedKind.kind}");
+                IKubernetesObject<V1ObjectMeta> metaInformation = (IKubernetesObject<V1ObjectMeta>)definedKind.KubeObject;
+                nestedLoopValidation(definedKind.KubeObject, $"/{definedKind.index}/{(string.IsNullOrWhiteSpace(metaInformation?.Metadata?.Name) ? metaInformation.Kind : metaInformation?.Metadata?.Name + "("+ metaInformation.Kind+")")}");
             });
             return concernList.Count > 0 ? concernList : new List<string>() { "All validations passed" };
         }
@@ -42,8 +46,9 @@ namespace k8config.GUIEvents.YAMLMode
                 {
                     if (!removeAttributes.Contains(_property.Name) && _property.CanWrite)
                     {
-                        string currentPath = $"{_currentPath}:{_property.Name}";
                         bool isRequired = (_property.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false)?.First() as KubernetesPropertyAttribute)?.IsRequired ?? false;
+                        string jsonName = (_property.GetCustomAttributes(typeof(JsonPropertyAttribute), false)?.First() as JsonPropertyAttribute)?.PropertyName;
+                        string currentPath = $"{_currentPath}/{jsonName}";
                         if (isRequired && _property.GetValue(_object) == null)
                         {
                             concernList.Add(currentPath);

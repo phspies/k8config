@@ -15,7 +15,7 @@ namespace k8config
             Type currentKubeType = KubeObject.GetCurrentObject().GetKubeType();
             if (GlobalVariables.promptArray.Count == 1 && _nestedObject != null && GlobalVariables.availableKubeTypes.Exists(x => x.kind == _nestedObject))
             {
-                descriptionView.Text = (Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == _nestedObject)?.assemblyFullName).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description;
+                descriptionView.Text = HttpUtility.HtmlDecode((Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == _nestedObject)?.assemblyFullName).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
             }
             else if (GlobalVariables.promptArray.Count >= 2 && currentKubeType != null && _nestedObject == null)
             {
@@ -25,7 +25,8 @@ namespace k8config
             {
                 if (currentProperties.Exists(x => x.Name.ToLower() == _nestedObject.ToLower()))
                 {
-                    descriptionView.Text = (currentKubeType.GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == _nestedObject.ToLower()).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description;
+                    UpdateMessageBar("command found");
+                    descriptionView.Text = HttpUtility.HtmlDecode((currentKubeType.GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == _nestedObject.ToLower()).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
                 }
             }
             else

@@ -24,7 +24,8 @@ namespace k8config
             Height = Dim.Fill(),
 
         };
-
+        static List<string> sessionHistory = new List<string>();
+        static int sessionHistoryIndex = 0;
         static ListView availableKindsListView = new ListView();
         static Label commandPromptLabel = new Label();
         static Window commandWindow = new Window();
@@ -34,42 +35,41 @@ namespace k8config
         static ListView definedYAMLListView = new ListView();
         static Window descriptionWindow = new Window();
         static TextView descriptionView = new TextView();
+        static Button closeValidationWindowButton = new Button("Close", true);
+        static Dialog validationWindow = new Dialog("Validation Status", 80, 17, closeValidationWindowButton)
+        {
+            X = Pos.Center(),
+            Y = Pos.Center(),
+            Visible = false,
+        };
         static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ Validate", () => {
-                    List<string> objections = YAMLOperations.Validate();
-                    var closeWarnWindowButton = new Button("Close", true);
-                    var warnWindow = new Dialog("Validation Status", 60, 17, closeWarnWindowButton)
+                    if (!validationWindow.Visible)
                     {
-                        Title = "Failed Validations",
-                        Width = 60,
-                        Height = 17,
-                        X = Pos.Center(),
-                        Y = Pos.Center(),
-                    };
-                    var listView = new ListView(objections)
-                    {
-                        Width = 56,
-                        Height = 12,
-                        X = warnWindow.Bounds.Top + 2,
-                        Y = Pos.Center()
-                    };
-                    warnWindow.Add(listView);
-                    closeWarnWindowButton.Clicked += () => {
-                        warnWindow.Visible = false;
-                        commandPromptTextField.SetFocus();
-                    };
-                    warnWindow.Visible = true;
-                    topLevelWindowObject.Add(warnWindow);
-                    closeWarnWindowButton.SetFocus();
+                        List<string> objectionsList = YAMLOperations.Validate();
+                        var validationlistView = new ListView(objectionsList)
+                        {
+                            Width = validationWindow.Bounds.Width - 2,
+                            Height = validationWindow.Bounds.Height - 4,
+                            X = validationWindow.Bounds.Top + 2,
+                            Y = Pos.Center()
+                        };
+                        validationWindow.Add(validationlistView);
+
+                        validationWindow.Visible = true;
+                        closeValidationWindowButton.SetFocus();
+                    }
                 }),
+
                 new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); }),
-               new StatusItem (Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
+               new StatusItem(Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
 
             };
 
         static public void YAMLMode()
         {
+
             statusBar.Items = interactiveStatusBarItems;
             availableKindsWindow = new Window()
             {
@@ -175,6 +175,12 @@ namespace k8config
             YAMLModeWindow.Add(descriptionWindow);
             commandWindow.Add(commandPromptLabel, commandPromptTextField);
             topLevelWindowObject.Add(YAMLModeWindow);
+            YAMLModeWindow.Add(validationWindow);
+            closeValidationWindowButton.Clicked += () =>
+            {
+                validationWindow.Visible = false;
+                commandPromptTextField.SetFocus();
+            };
 
             ToggleDisplayMode();
 

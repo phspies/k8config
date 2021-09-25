@@ -43,8 +43,17 @@ namespace k8config
                     }
                 });
             }
+            if (outputList.Count == 0)
+            {
+                outputList.Add("empty");
+                definedYAMLWindow.Title = "No objects available to choose from";
+            }
+            else
+            {
+                definedYAMLWindow.Title = "Available objects to choose from";
+            }    
             definedYAMLListView.SetSourceAsync(outputList);
-            definedYAMLWindow.Title = "Available kinds to choose from";
+            
         }
     }
 }

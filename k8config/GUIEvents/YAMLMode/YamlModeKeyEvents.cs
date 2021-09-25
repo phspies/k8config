@@ -19,11 +19,49 @@ namespace k8config
             YAMLModeWindow.KeyUp += (e) =>
             {
                 string currentInputText = commandPromptTextField.Text.ToString();
-                if (e.KeyEvent.Key == Key.CursorDown || e.KeyEvent.Key == Key.CursorUp)
+                if (e.KeyEvent.Key == (Key.CtrlMask | Key.C))
+                {
+                    commandPromptTextField.Text = "";
+                    commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                }
+                if (e.KeyEvent.Key == (Key.CtrlMask | Key.Z) || e.KeyEvent.Key == (Key.CtrlMask | Key.A) || e.KeyEvent.Key == Key.CursorUp || e.KeyEvent.Key == Key.CursorDown)
                 {
                     switch (e.KeyEvent.Key)
                     {
-                        case Key.CursorUp:
+
+                        case (Key.CursorUp):
+                            if (sessionHistory.Count != 0)
+                            {
+                                if (sessionHistoryIndex != 0)
+                                {
+                                    sessionHistoryIndex--;
+                                }
+                                else
+                                {
+                                    sessionHistoryIndex = sessionHistory.Count - 1;
+                                }
+                                commandPromptTextField.Text = sessionHistory[sessionHistoryIndex];
+                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                            }
+
+                            break;
+                        case (Key.CursorDown):
+                            if (sessionHistory.Count != 0)
+                            {
+                                if (sessionHistoryIndex < (sessionHistory.Count - 1))
+                                {
+                                    sessionHistoryIndex++;
+                                }
+                                else
+                                {
+                                    sessionHistoryIndex = sessionHistory.Count == 0 ? (sessionHistory.Count - 1) : 0;
+                                }
+                                commandPromptTextField.Text = sessionHistory[sessionHistoryIndex];
+                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                            }
+
+                            break;
+                        case (Key.CtrlMask | Key.A):
                             currentavailableListUpDown = true;
                             if (availableKindsListView.SelectedItem > 0)
                             {
@@ -35,7 +73,7 @@ namespace k8config
                             }
                             commandPromptTextField.SetFocus();
                             break;
-                        case Key.CursorDown:
+                        case (Key.CtrlMask | Key.Z):
                             currentavailableListUpDown = true;
                             if (availableKindsListView.SelectedItem < availableKindsListView.Source.ToList().Count - 1)
                             {
@@ -68,7 +106,7 @@ namespace k8config
                 {
                     currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
-    
+
                     if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
                     {
                         if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1];
@@ -111,12 +149,22 @@ namespace k8config
             };
             commandPromptTextField.KeyUp += (e) =>
             {
+                List<string> allowedDescriptionCommands = new List<string>() { "new", "no" };
                 string currentInputText = commandPromptTextField.Text.ToString();
                 string[] args = currentInputText.Trim().Split();
                 if (e.KeyEvent.Key == Key.Enter)
                 {
+                    UpdateMessageBar("");
                     if (!string.IsNullOrEmpty(currentInputText))
                     {
+                        if (sessionHistory.Count == 0)
+                        {
+                            sessionHistory.Add(currentInputText);
+                        }
+                        else if (sessionHistory.Last() != currentInputText)
+                        {
+                            sessionHistory.Add(currentInputText);
+                        }
                         currentavailableListUpDown = false;
                         if (currentInputText == "..")
                         {
@@ -128,7 +176,7 @@ namespace k8config
                                 paintYAML();
                             }
                         }
-                        if (currentInputText == "/")
+                        else if (currentInputText == "/")
                         {
                             if (GlobalVariables.promptArray.Count() > 1)
                             {
@@ -178,12 +226,13 @@ namespace k8config
                                     {
                                         currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListTypes[0]) });
                                     }
-                                    UpdateMessageBar($"{selectListTypes[0].Name} added to {GlobalVariables.promptArray.Last()}");
+                                    UpdateMessageBar($"{selectListTypes[0].Name.Replace("V1", "")} added to {GlobalVariables.promptArray.Last()}");
                                     AddToPrompt(KubeObject.GetNestedList(currentObject).Last().index.ToString());
                                 }
                                 repositionCommandInput();
                                 paintYAML();
                             }
+
                         }
                         else
                         {
@@ -223,27 +272,34 @@ namespace k8config
                                 {
                                     if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
                                     {
-                                        var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
-                                        Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
-                                        object _object = Activator.CreateInstance(currentType);
-                                        _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
-                                        string apiVersion = (string.IsNullOrWhiteSpace(kubeObject.group) ? kubeObject.version : $"{kubeObject.group}/{kubeObject.version}");
-                                        _object.GetType().GetProperty("ApiVersion").SetValue(_object, apiVersion);
-                                        if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
+                                        if (GlobalVariables.promptArray.Count == 1)
                                         {
-                                            withMetadata.Metadata = new V1ObjectMeta();
+                                            var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
+                                            Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
+                                            object _object = Activator.CreateInstance(currentType);
+                                            _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
+                                            string apiVersion = (string.IsNullOrWhiteSpace(kubeObject.group) ? kubeObject.version : $"{kubeObject.group}/{kubeObject.version}");
+                                            _object.GetType().GetProperty("ApiVersion").SetValue(_object, apiVersion);
+                                            if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
+                                            {
+                                                withMetadata.Metadata = new V1ObjectMeta();
+                                            }
+                                            SessionDefinedKind newSessionKind = new SessionDefinedKind()
+                                            {
+                                                index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
+                                                kind = kubeObject.kind,
+                                                KubeObject = _object
+                                            };
+                                            GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
+                                            AddToPrompt(newSessionKind.index.ToString());
+                                            UpdateMessageBar($"{newSessionKind.kind} created and selected");
+                                            repositionCommandInput();
+                                            paintYAML();
                                         }
-                                        SessionDefinedKind newSessionKind = new SessionDefinedKind()
+                                        else
                                         {
-                                            index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
-                                            kind = kubeObject.kind,
-                                            KubeObject = _object
-                                        };
-                                        GlobalVariables.sessionDefinedKinds.Add(newSessionKind);
-                                        AddToPrompt(newSessionKind.index.ToString());
-                                        UpdateMessageBar($"{newSessionKind.kind} created and selected");
-                                        repositionCommandInput();
-                                        paintYAML();
+                                            UpdateMessageBar($"\"{currentInputText}\" command not found");
+                                        }
                                     }
                                     else //this is the direct new commands to dictionaries and arrays
                                     {
@@ -337,7 +393,14 @@ namespace k8config
                                             UpdateMessageBar($"Cleared {args[1]} value");
                                             try
                                             {
-                                                propertyInfo.SetValue(currentKubeObject, null);
+                                                if (propertyInfo.GetValue(currentKubeObject) != null)
+                                                {
+                                                    propertyInfo.SetValue(currentKubeObject, null);
+                                                }
+                                                else
+                                                {
+                                                    UpdateMessageBar($"\"{args[1]}\" does not contain a value");
+                                                }
                                             }
                                             catch (Exception ex)
                                             {
@@ -349,7 +412,7 @@ namespace k8config
                                         {
                                             UpdateMessageBar($"Attribute {args[1]} not found");
                                         }
-                                        
+
                                     }
                                 }
                                 else if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == args[0] && !x.propertyIsList))
@@ -429,7 +492,6 @@ namespace k8config
                                 {
                                     object tmpObject = KubeObject.GetCurrentObject();
                                     UpdateDescriptionView(currentInputText);
-                                    
                                     if (tmpObject.RetrieveAttributeValues().Exists(x => x.name.ToLower() == currentInputText.ToLower()))
                                     {
                                         var currentKubeObject = tmpObject.RetrieveAttributeValues().FirstOrDefault(x => x.name.ToLower() == currentInputText.ToLower());
@@ -437,7 +499,7 @@ namespace k8config
                                         Type currentObjectType = Nullable.GetUnderlyingType(currentProperty.PropertyType) != null ? Nullable.GetUnderlyingType(currentProperty.PropertyType) : currentProperty.PropertyType;
                                         if (currentObjectType.IsPrimitive || (currentObjectType == typeof(String)) || currentKubeObject.propertyIsArray || currentKubeObject.propertyIsDictionary)
                                         {
-                                            UpdateMessageBar($"({currentInputText}) requires a value of type {currentKubeObject.displayType}");
+                                            UpdateMessageBar($"({currentInputText}) requires a value of type \"{currentKubeObject.displayType}\"");
                                         }
                                         else
                                         {
@@ -466,19 +528,15 @@ namespace k8config
                                         }
                                     }
                                 }
-
-
                                 else
                                 {
-                                    UpdateMessageBar("Command not found");
+                                    UpdateMessageBar($"Command \"{currentInputText}\" not found");
                                 }
                             }
                         }
                         commandPromptTextField.Text = "";
                         autoCompleteInterruptText = "";
-
                     }
-
                 }
                 updateAvailableKindsList();
                 currentInputText = commandPromptTextField.Text.ToString();
@@ -491,12 +549,14 @@ namespace k8config
                 {
                     UpdateDescriptionView(args[1]);
                 }
+                else if (args.Length == 2 && args[0] == "no")
+                {
+                    UpdateDescriptionView(args[1]);
+                }
                 else
                 {
                     UpdateDescriptionView();
                 }
-                //repositionCommandInput();
-                //drawYAML();
             };
         }
     }

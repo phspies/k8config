@@ -33,6 +33,7 @@ namespace k8config
                 int currentIndex = yamlList.IndexOf(startObject) < 1 ? 1 : yamlList.IndexOf(startObject);
                 string[] yamlArray = yamlList.ToArray();
                 List<int> indexArray = new List<int>();
+                currentIndex--;
                 for (int x = 2; x < (GlobalVariables.promptArray.Count); x++)
                 {
                     int subindex;
