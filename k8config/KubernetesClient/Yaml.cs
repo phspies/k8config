@@ -63,6 +63,7 @@ namespace k8s
                 },
                 t => t);
 
+
         public class ByteArrayStringYamlConverter : IYamlTypeConverter
         {
             public bool Accepts(Type type)

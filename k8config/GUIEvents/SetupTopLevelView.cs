@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace k8config
         static StatusBar statusBar = new StatusBar();
         static void SetupTopLevelView()
         {
+
             topLevelWindowObject.Clear();
             topLevelWindowObject.TabStop = true;
             topLevelWindowObject.ColorScheme.Normal = new Terminal.Gui.Attribute(Color.Black, Color.White);
@@ -43,12 +45,15 @@ namespace k8config
 
                 if (GlobalVariables.displayMode == 0)
                 {
+ 
                     availableKindsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.30);
+                    availableKindsWindow.Height = Convert.ToInt16(topLevelWindowObject.Bounds.Height * 0.70);
                     definedYAMLWindow.X = availableKindsWindow.Bounds.Right;
                     definedYAMLWindow.Height = availableKindsWindow.Bounds.Height;
                     commandWindow.Y = topLevelWindowObject.Bounds.Height - 4;
                     descriptionWindow.X = 0;
                     descriptionWindow.Y = availableKindsWindow.Bounds.Bottom;
+                    descriptionWindow.Height = topLevelWindowObject.Bounds.Height-definedYAMLWindow.Height - commandWindow.Height-1;
                 }
                 else if (GlobalVariables.displayMode == 1)
                 {

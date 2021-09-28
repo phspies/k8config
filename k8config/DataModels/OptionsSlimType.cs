@@ -10,6 +10,7 @@ namespace k8config.DataModels
 
         public object value { get; set; }
         public string displayType { get; set; }
+        public string entryFormat { get; set; }
         public bool propertyIsRequired { get; set; }
         public bool propertyIsArray { get; set; }
         public bool propertyIsDictionary { get; set; }

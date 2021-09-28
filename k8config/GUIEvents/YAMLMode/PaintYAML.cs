@@ -1,5 +1,7 @@
 ﻿using k8config.DataModels;
 using k8s;
+using k8s.Models;
+using Org.BouncyCastle.Utilities.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,12 +23,15 @@ namespace k8config
                     yamlList.Remove(yamlList.Last());
                 }
                 definedYAMLListView.SetSource(yamlList);
-                definedYAMLWindow.Title = $"{GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1])).kind} YAML";
+                var currentObject = (IKubernetesObject<V1ObjectMeta>)GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
+                definedYAMLWindow.Title = string.IsNullOrWhiteSpace(currentObject?.Metadata?.Name) ? $"{currentObject.Kind} YAML" : $"{currentObject.Name()} ({currentObject.Kind}) YAML";
             }
             else
             {
                 definedYAMLListView.SetSourceAsync(new List<string>());
             }
+
+            //move select  bar to current selected prompt object 
             if (GlobalVariables.promptArray.Count > 2)
             {
                 string startObject = yamlList.Find(x => x.Contains(GlobalVariables.promptArray[2]));
@@ -51,7 +56,6 @@ namespace k8config
                             i++;
                             while (true)
                             {
-
                                 currentIndex += 1;
                                 if (currentIndex > yamlArray.Length-1)
                                 {
@@ -68,7 +72,6 @@ namespace k8config
                                     fallbackIndex = currentIndex;
                                     break;
                                 }
-                                
                             }
                         }
                     }

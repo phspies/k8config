@@ -11,22 +11,27 @@ namespace k8config
     {
         static void UpdateDescriptionView(string _nestedObject = null)
         {
-            var currentProperties = KubeObject.GetCurrentObject().GetObjectProperties();
-            Type currentKubeType = KubeObject.GetCurrentObject().GetKubeType();
+            var currentKubeObject = KubeObject.GetCurrentObject();
+            Type currentKubeType = currentKubeObject.GetKubeType();
             if (GlobalVariables.promptArray.Count == 1 && _nestedObject != null && GlobalVariables.availableKubeTypes.Exists(x => x.kind == _nestedObject))
             {
                 descriptionView.Text = HttpUtility.HtmlDecode((Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == _nestedObject)?.assemblyFullName).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
+                descriptionView.Text += "\r\n\r\nEntry format = " + currentKubeObject.RetrieveAttributeValues().FirstOrDefault(x => string.Compare(x.name, _nestedObject, true) == 0)?.entryFormat + " <-";
+
             }
             else if (GlobalVariables.promptArray.Count >= 2 && currentKubeType != null && _nestedObject == null)
             {
                 descriptionView.Text = HttpUtility.HtmlDecode((currentKubeType.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
+                //descriptionView.Text += "\r\n" + currentKubeObject.RetrieveAttributeValues().FirstOrDefault(x => string.Compare(x.name, _nestedObject, true) == 0).entryFormat;
+
             }
             else if (GlobalVariables.promptArray.Count >= 2 && currentKubeType != null && _nestedObject != null)
             {
-                if (currentProperties.Exists(x => x.Name.ToLower() == _nestedObject.ToLower()))
+                if (currentKubeObject.JsonPropertyExists(_nestedObject.ToLower()))
                 {
-                    UpdateMessageBar("command found");
-                    descriptionView.Text = HttpUtility.HtmlDecode((currentKubeType.GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == _nestedObject.ToLower()).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute)?.Description);
+                    descriptionView.Text = HttpUtility.HtmlDecode(currentKubeObject.GetJsonKubernetesAttribute(_nestedObject)?.Description);
+                    var test = currentKubeObject.RetrieveAttributeValues();
+                    descriptionView.Text += "\r\n\r\nEntry format = " + currentKubeObject.RetrieveAttributeValues().FirstOrDefault(x => string.Compare(x.name, _nestedObject, true) == 0)?.entryFormat + " <-";
                 }
             }
             else

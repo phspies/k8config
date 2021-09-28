@@ -55,6 +55,19 @@ namespace k8config
             }
             AssemblySubsystem.BuildAvailableAssemblyList();
 
+            try
+            {
+                k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
+                Array.Resize(ref interactiveStatusBarItems, 4);
+                interactiveStatusBarItems[3] = interactiveStatusBarItems[2];
+                interactiveStatusBarItems[2] = new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); });
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Cannot load kubeconfig: {e.Message}");
+            }
+
+
             SetupTopLevelView();
             YAMLMode();
             RealTimeMode();

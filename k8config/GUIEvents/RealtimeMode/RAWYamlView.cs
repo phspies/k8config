@@ -14,12 +14,14 @@ namespace k8config
         static public void RAWYamlView(object currentSelected)
         {
             rawYAMLList = new List<string>();
-            rawYAMLListView.SetSourceAsync(Yaml.YAMLSerializer.Serialize(currentSelected).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList());
+            rawYAMLList = Yaml.YAMLSerializer.Serialize(currentSelected).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+            rawYAMLList.ForEach(line => line.Replace("{}","empty"));
+            rawYAMLListView.SetSourceAsync(rawYAMLList);
             rawYAMLWindow.Title = $"{((IKubernetesObject<V1ObjectMeta>)currentSelected).Name()} Yaml View"; 
             rawYAMLWindow.Width = realtimeModeWindow.Bounds.Width - 5;
             rawYAMLWindow.Height = realtimeModeWindow.Bounds.Height - 5;
             rawYAMLWindow.Visible = true;
-
+            ;
         }
     }
 }

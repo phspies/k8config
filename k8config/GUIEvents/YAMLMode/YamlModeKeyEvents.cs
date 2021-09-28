@@ -1,13 +1,10 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
-using k8s;
 using k8s.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Terminal.Gui;
 
 namespace k8config
@@ -28,7 +25,6 @@ namespace k8config
                 {
                     switch (e.KeyEvent.Key)
                     {
-
                         case (Key.CursorUp):
                             if (sessionHistory.Count != 0)
                             {
@@ -43,7 +39,6 @@ namespace k8config
                                 commandPromptTextField.Text = sessionHistory[sessionHistoryIndex];
                                 commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
                             }
-
                             break;
                         case (Key.CursorDown):
                             if (sessionHistory.Count != 0)
@@ -180,7 +175,7 @@ namespace k8config
                         {
                             if (GlobalVariables.promptArray.Count() > 1)
                             {
-                                GlobalVariables.promptArray = new List<string>() { "k8config" };
+                                GlobalVariables.promptArray = new List<string>() { "yaml" };
                                 repositionCommandInput();
                                 paintYAML();
                             }
@@ -277,13 +272,9 @@ namespace k8config
                                             var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
                                             Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
                                             object _object = Activator.CreateInstance(currentType);
-                                            _object.GetType().GetProperty("Kind").SetValue(_object, kubeObject.kind);
+                                            _object.SetObjectPropertyValue("kind", kubeObject.kind);
                                             string apiVersion = (string.IsNullOrWhiteSpace(kubeObject.group) ? kubeObject.version : $"{kubeObject.group}/{kubeObject.version}");
-                                            _object.GetType().GetProperty("ApiVersion").SetValue(_object, apiVersion);
-                                            if (_object is IMetadata<V1ObjectMeta> withMetadata && withMetadata.Metadata == null)
-                                            {
-                                                withMetadata.Metadata = new V1ObjectMeta();
-                                            }
+                                            _object.SetObjectPropertyValue("apiversion", apiVersion);
                                             SessionDefinedKind newSessionKind = new SessionDefinedKind()
                                             {
                                                 index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
@@ -387,7 +378,7 @@ namespace k8config
                                     else
                                     {
                                         object currentKubeObject = KubeObject.GetCurrentObject();
-                                        PropertyInfo propertyInfo = currentKubeObject.GetType().GetProperties().FirstOrDefault(x => x.Name.ToLower() == args[1].ToLower());
+                                        PropertyInfo propertyInfo = currentKubeObject.GetJsonProperty(args[1]);
                                         if (propertyInfo != null)
                                         {
                                             UpdateMessageBar($"Cleared {args[1]} value");
@@ -418,12 +409,12 @@ namespace k8config
                                 else if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == args[0] && !x.propertyIsList))
                                 {
                                     object currentKubeObject = KubeObject.GetCurrentObject();
-                                    if (currentKubeObject.GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
+                                    if (currentKubeObject.JsonPropertyExists(args[0]))
                                     {
                                         UpdateDescriptionView(args[0].ToLower());
 
                                         OptionsSlimType currentSlimKubeObject = retrieveAvailableOptions(false, false).Item2.FirstOrDefault(x => x.name == args[0] && !x.propertyIsList);
-                                        var propertyInfo = currentKubeObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == args[0].ToLower());
+                                        var propertyInfo = currentKubeObject.GetJsonProperty(args[0]);
                                         Type propertyType = (propertyInfo.PropertyType.Name == typeof(Nullable<>).Name ? Nullable.GetUnderlyingType(propertyInfo.PropertyType) : propertyInfo.PropertyType);
                                         try
                                         {
@@ -433,14 +424,23 @@ namespace k8config
                                             }
                                             else if (currentSlimKubeObject.propertyIsArray)
                                             {
-                                                string tmpArray = "";
-                                                for (int i = 1; args.Length > i; i++)
+                                                string[] valueArray = currentInputText.Trim().Split("|");
+                                                string[] tmpArray = new string[valueArray.Length - 1];
+                                                int size = 0;
+                                                for (int i = 0; valueArray.Length > i; i++)
                                                 {
-                                                    tmpArray += $"{args[i]}";
+                                                    if (i == 0)
+                                                    {
+                                                        continue;
+                                                    }
+                                                    if (!string.IsNullOrWhiteSpace(valueArray[i]))
+                                                    {
+                                                        size += 1;
+                                                        tmpArray[i - 1] = valueArray[i];
+                                                    }
                                                 }
-                                                string[] arrayVars = tmpArray.Trim().Split("|");
-                                                arrayVars.ForEach(x => x.Trim());
-                                                propertyInfo.SetValue(currentKubeObject, arrayVars.ToList());
+                                                Array.Resize(ref tmpArray, size);
+                                                propertyInfo.SetValue(currentKubeObject, tmpArray);
                                             }
                                             else if (currentSlimKubeObject.propertyIsDictionary)
                                             {
@@ -492,10 +492,10 @@ namespace k8config
                                 {
                                     object tmpObject = KubeObject.GetCurrentObject();
                                     UpdateDescriptionView(currentInputText);
-                                    if (tmpObject.RetrieveAttributeValues().Exists(x => x.name.ToLower() == currentInputText.ToLower()))
+                                    OptionsSlimType currentKubeObject = tmpObject.RetrieveAttributeValue(currentInputText.ToLower());
+                                    if (currentKubeObject != null)
                                     {
-                                        var currentKubeObject = tmpObject.RetrieveAttributeValues().FirstOrDefault(x => x.name.ToLower() == currentInputText.ToLower());
-                                        var currentProperty = tmpObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == currentInputText.ToLower());
+                                        var currentProperty = tmpObject.GetJsonProperty(currentInputText);
                                         Type currentObjectType = Nullable.GetUnderlyingType(currentProperty.PropertyType) != null ? Nullable.GetUnderlyingType(currentProperty.PropertyType) : currentProperty.PropertyType;
                                         if (currentObjectType.IsPrimitive || (currentObjectType == typeof(String)) || currentKubeObject.propertyIsArray || currentKubeObject.propertyIsDictionary)
                                         {
@@ -503,21 +503,18 @@ namespace k8config
                                         }
                                         else
                                         {
-                                            if (tmpObject.GetType().GetProperty(currentProperty.Name).GetValue(tmpObject) == null)
+                                            if (tmpObject.GetObjectPropertyValue(currentProperty.Name) == null)
                                             {
                                                 if (currentProperty.PropertyType.IsGenericType)
                                                 {
-                                                    var test = currentProperty.PropertyType.GetGenericTypeDefinition();
                                                     if (currentProperty.PropertyType.GetGenericTypeDefinition() == typeof(IList<>))
                                                     {
-                                                        var listType = typeof(List<>);
-                                                        var constructedListType = listType.MakeGenericType(currentProperty.PropertyType.GetGenericArguments()[0]);
-                                                        tmpObject.GetType().GetProperty(currentProperty.Name).SetValue(tmpObject, Activator.CreateInstance(constructedListType));
+                                                        tmpObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(typeof(List<>).MakeGenericType(currentProperty.PropertyType.GetGenericArguments()[0])));
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    tmpObject.GetType().GetProperty(currentProperty.Name).SetValue(tmpObject, Activator.CreateInstance(currentProperty.PropertyType));
+                                                    tmpObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(currentProperty.PropertyType));
                                                 }
 
                                             }
@@ -541,7 +538,7 @@ namespace k8config
                 updateAvailableKindsList();
                 currentInputText = commandPromptTextField.Text.ToString();
                 args = currentInputText.Trim().Split();
-                if (KubeObject.GetCurrentObject().GetType().GetProperties().ToList().Exists(x => x.Name.ToLower() == args[0].ToLower()))
+                if (KubeObject.GetCurrentObject().JsonPropertyExists(args[0].ToLower()))
                 {
                     UpdateDescriptionView(args[0]);
                 }

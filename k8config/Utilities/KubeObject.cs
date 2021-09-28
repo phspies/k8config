@@ -46,29 +46,13 @@ namespace k8config.Utilities
             }
             return tmpList;
         }
-        public static object GetNestedObject(object _object, int index)
-        {
-            object returnObject = null;
-            if (_object.IsList())
-            {
-                int pointer = 0;
-                foreach (var currentObject in (IList)_object)
-                {  
-                    if (index == pointer)
-                    {
-                        return currentObject;
-                    }
-                    pointer += 1;
-                }
-            }
-            return returnObject;
-        }
+
         public static object GetCurrentObject()
         {
-            object privateObject = new object();
+            object returnObject = new object();
             if (GlobalVariables.promptArray.Count() > 1)
             {
-                privateObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
+                returnObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
                 for (int pointer = 1; GlobalVariables.promptArray.ToArray().Length > pointer; pointer++)
                 {
                     int index = 0;
@@ -77,23 +61,22 @@ namespace k8config.Utilities
                     {
                         if (pointer == 1 && GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
                         {
-                            privateObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index).KubeObject;
+                            returnObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index).KubeObject;
                         }
                         else
                         {
-                            if (KubeObject.DoesNestedIndexExist(privateObject, index))
+                            if (DoesNestedIndexExist(returnObject, index))
                             {
-                                privateObject = KubeObject.GetNestedObject(privateObject, index);
+                                returnObject = returnObject.GetNestedObject(index);
                             }
                         }
                     }
                     else
                     {
-                        var currentObject = privateObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == pointerPromptValue);
-                        object tempvalue = privateObject.GetType().GetProperty(currentObject.Name).GetValue(privateObject);
-                        if (tempvalue == null)
+                        var currentObject = returnObject.GetJsonProperty(pointerPromptValue);
+                        if (returnObject.GetJsonObjectPropertyValueIsNotNull(pointerPromptValue))
                         {
-                            Type[] selectListTypes = privateObject.GetType().GetProperty(currentObject.Name).PropertyType.GetGenericArguments();
+                            Type[] selectListTypes = returnObject.GetObjectGenericArguments(currentObject.Name);
                             if (selectListTypes.Length == 1)
                             {
                                 if (selectListTypes[0].Name == "String")
@@ -107,17 +90,14 @@ namespace k8config.Utilities
                             }
                             else if (selectListTypes.Length == 2)
                             {
-                                var temp = ObjectExtensions.ConstructDictionary(selectListTypes[0], selectListTypes[1]);
-                                privateObject.GetType().GetProperty(currentObject.Name).SetValue(privateObject, temp);
-             
+                                returnObject.SetObjectPropertyValue(pointerPromptValue, ObjectExtensions.ConstructDictionary(selectListTypes[0], selectListTypes[1]));
                             }
                         }
-                        privateObject = privateObject.GetType().GetProperty(currentObject.Name).GetValue(privateObject);
+                        returnObject = returnObject.GetJsonObjectPropertyValue(pointerPromptValue);
                     }
                 }
             }
-            return privateObject;
+            return returnObject;
         }
-
     }
 }

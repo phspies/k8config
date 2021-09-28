@@ -62,7 +62,6 @@ namespace k8config
                     }
                 }),
 
-                new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); }),
                new StatusItem(Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
 
             };
@@ -181,7 +180,7 @@ namespace k8config
                 validationWindow.Visible = false;
                 commandPromptTextField.SetFocus();
             };
-
+            
             ToggleDisplayMode();
 
         }

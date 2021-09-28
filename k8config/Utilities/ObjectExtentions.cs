@@ -12,15 +12,70 @@ namespace k8config.Utilities
 {
     public static class ObjectExtensions
     {
-        public static List<PropertyInfo> GetObjectProperties(this object src)
+        public static List<PropertyInfo> GetObjectProperties(this object srcObject)
         {
-            return src.GetType().GetProperties().ToList();
-
+            return srcObject.GetType().GetProperties().ToList();
         }
-        public static object GetPropValue<T>(this T src, string propName)
+        public static PropertyInfo GetObjectProperty(this object srcObject, string property)
         {
-            var interm = src.GetType();
-            return src.GetType().GetProperties().Where(pi => Attribute.IsDefined(pi, typeof(DataNameAttribute))).FirstOrDefault(x => x.Name == propName)?.GetValue(src, null);
+            return srcObject.GetType().GetProperties().ToList().FirstOrDefault(x => x.Name.ToLower() == property.ToLower());
+        }
+        public static KubernetesPropertyAttribute GetJsonKubernetesAttribute(this object sourceObject, string jsonPropertyName)
+        {
+            return sourceObject.GetJsonProperty(jsonPropertyName).GetCustomAttributes(typeof(KubernetesPropertyAttribute), false).First() as KubernetesPropertyAttribute;
+        }
+        public static PropertyInfo GetJsonProperty<T>(this T obj, string jsonPropertyName)
+        {
+            return obj.GetType().GetProperties().FirstOrDefault(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0);
+        }
+        public static bool JsonPropertyExists<T>(this T obj, string jsonPropertyName)
+        {
+            return obj.GetType().GetProperties().Any(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0);
+        }
+        public static bool GetJsonObjectPropertyValueIsNotNull(this object srcObject, string jsonPropertyName)
+        {
+            return srcObject.GetType().GetProperties().FirstOrDefault(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0)?.GetValue(srcObject) == null ? false : true;
+        }
+        public static object GetJsonObjectPropertyValue(this object srcObject, string jsonPropertyName)
+        {
+            return srcObject.GetType().GetProperties().FirstOrDefault(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0)?.GetValue(srcObject);
+        }
+        public static object GetObjectPropertyValue(this object srcObject, string property)
+        {
+            return srcObject.GetType()?.GetProperties()?.ToList()?.FirstOrDefault(x => x.Name.ToLower() == property.ToLower())?.GetValue(srcObject);
+        }
+        public static bool ObjectPropertyValueExist(this object srcObject, string property)
+        {
+            return srcObject.GetType()?.GetProperties()?.ToList()?.Exists(x => x.Name.ToLower() == property.ToLower()) ?? false;
+        }
+        public static void SetObjectPropertyValue(this object targetObject, string jsonPropertyName, object objectValue)
+        {
+            targetObject.GetType().GetProperties().FirstOrDefault(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0).SetValue(targetObject, objectValue);
+        }
+        public static Type[] GetObjectGenericArguments(this object srcObject, string jsonPropertyName)
+        {
+            return srcObject.GetType().GetProperties().FirstOrDefault(x => string.Compare((x.GetCustomAttributes(typeof(JsonPropertyAttribute), false).First() as JsonPropertyAttribute).PropertyName, jsonPropertyName, StringComparison.OrdinalIgnoreCase) == 0).PropertyType.GetGenericArguments();
+        }
+        public static object GetDataNamePropValue<T>(this T src, string columnName)
+        {
+            return src.GetType().GetProperties().Where(pi => Attribute.IsDefined(pi, typeof(DataNameAttribute))).FirstOrDefault(x => x.Name == columnName)?.GetValue(src, null);
+        }
+        public static object GetNestedObject<T>(this T src, int index)
+        {
+            object returnObject = null;
+            if (src.IsList())
+            {
+                int pointer = 0;
+                foreach (var currentObject in (IList)src)
+                {
+                    if (index == pointer)
+                    {
+                        return currentObject;
+                    }
+                    pointer += 1;
+                }
+            }
+            return returnObject;
         }
         public static object GetNestedPropertyValue(this object obj, string propertyName)
         {
@@ -91,7 +146,6 @@ namespace k8config.Utilities
             {
                 return Activator.CreateInstance(type, new object[] { o });
             }
-
         }
         public static bool IsList(this object o)
         {
@@ -105,7 +159,7 @@ namespace k8config.Utilities
             }
             else if (o is IList)
             {
-                  return o.GetType().IsGenericType && (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)));
+                return o.GetType().IsGenericType && (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IList<>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)));
             }
             return false;
         }
@@ -182,12 +236,10 @@ namespace k8config.Utilities
                    (o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>)) || o.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(IDictionary<,>))) && o.GetType().GetGenericArguments()[0] == typeof(Dictionary<,>);
             }
         }
-        public static ObjectPropertyType RetrieveAttributeValue(this object o, string attributeName)
+        public static OptionsSlimType RetrieveAttributeValue(this object o, string attributeName)
         {
-            OptionsSlimType tmp = o.RetrieveAttributeValues().FirstOrDefault(x => x.name == attributeName);
-            return new ObjectPropertyType() { name = attributeName, kubeType = tmp.GetType(), kubeObject = tmp };
+            return o.RetrieveAttributeValues().FirstOrDefault(x => x.name == attributeName);
         }
-
         public static List<OptionsSlimType> RetrieveAttributeValues(this object o)
         {
             List<OptionsSlimType> tmpAttributes = new List<OptionsSlimType>();
@@ -200,7 +252,7 @@ namespace k8config.Utilities
                     {
 
                         o.GetType().GetGenericArguments()[0].GetProperties().ToList().ForEach(x =>
-                        {   
+                        {
                             if (x.PropertyType.Name == typeof(IList<>).Name)
                             {
                                 if (!removeAttributes.Contains(x.Name))
@@ -218,12 +270,10 @@ namespace k8config.Utilities
                                 if (!removeAttributes.Contains(x.Name))
                                 {
                                     tmpAttributes.Add(new OptionsSlimType() { name = x.Name.ToLower(), primaryType = x.PropertyType, propertyIsList = false, });
-                                    //kubeObject = x.GetValue(x, null)
                                 }
 
                             }
                         });
-
                     }
                 }
                 else
@@ -232,24 +282,29 @@ namespace k8config.Utilities
                         {
                             if (!removeAttributes.Contains(x.Name))
                             {
-                                var newOptionObject = new OptionsSlimType() {
+                                var newOptionObject = new OptionsSlimType()
+                                {
                                     name = x.GetCustomAttribute<JsonPropertyAttribute>()?.PropertyName,
-                                    primaryType = x.GetKubeType(), value = x.GetValue(o, null),
+                                    primaryType = x.GetKubeType(),
+                                    value = x.GetValue(o, null),
                                     propertyIsRequired = (x.GetCustomAttributes(typeof(KubernetesPropertyAttribute), false)[0] as KubernetesPropertyAttribute).IsRequired
 
                                 };
 
                                 if (x.IsStringArray())
                                 {
-                                    newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1","")}>";
+
+                                    newOptionObject.displayType = $"Array<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>";
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                     newOptionObject.propertyIsArray = true;
+                                    newOptionObject.entryFormat = $"{newOptionObject.name} {x.PropertyType.GetGenericArguments()[0].Name}|{x.PropertyType.GetGenericArguments()[0].Name}|{x.PropertyType.GetGenericArguments()[0].Name}";
                                 }
                                 else if (x.IsList())
                                 {
                                     newOptionObject.displayType = $"List<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>";
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
                                     newOptionObject.propertyIsList = true;
+                                    newOptionObject.entryFormat = $"{newOptionObject.name} <-";
                                 }
                                 else if (x.IsDictionary())
                                 {
@@ -258,15 +313,25 @@ namespace k8config.Utilities
                                     newOptionObject.secondaryType = x.PropertyType.GetGenericArguments()[1];
                                     newOptionObject.properyType = x.PropertyType;
                                     newOptionObject.propertyIsDictionary = true;
+                                    newOptionObject.entryFormat = $"{newOptionObject.name} <{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>:<{x.PropertyType.GetGenericArguments()[1].Name.Replace("V1", "")}>|<{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>:<{x.PropertyType.GetGenericArguments()[1].Name.Replace("V1", "")}>";
                                 }
                                 else if (x.PropertyType.GetGenericArguments().Length > 0)
                                 {
                                     newOptionObject.displayType = x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "");
                                     newOptionObject.primaryType = x.PropertyType.GetGenericArguments()[0];
+                                    newOptionObject.entryFormat = $"{newOptionObject.name} <{x.PropertyType.GetGenericArguments()[0].Name.Replace("V1", "")}>";
                                 }
                                 else
                                 {
                                     newOptionObject.displayType = x.PropertyType.Name.Replace("V1", "");
+                                    if (x.PropertyType.IsPrimitive || x.PropertyType == typeof(string))
+                                    {
+                                        newOptionObject.entryFormat = $"{newOptionObject.name} <{x.PropertyType.Name.Replace("V1", "")}>";
+                                    }
+                                    else
+                                    {
+                                        newOptionObject.entryFormat = $"{newOptionObject.name}";
+                                    }
                                     newOptionObject.propertyIsNamedType = true;
                                 }
                                 tmpAttributes.Add(newOptionObject);
@@ -276,7 +341,6 @@ namespace k8config.Utilities
             }
 
             return tmpAttributes;
-
         }
         public static Dictionary<string, object> GetPropertyAttributes(PropertyInfo property)
         {
@@ -284,14 +348,12 @@ namespace k8config.Utilities
             // look for attributes that takes one constructor argument
             foreach (CustomAttributeData attribData in property.GetCustomAttributesData())
             {
-
                 if (attribData.ConstructorArguments.Count == 1)
                 {
                     string typeName = attribData.Constructor.DeclaringType.Name;
                     if (typeName.EndsWith("Attribute")) typeName = typeName.Substring(0, typeName.Length - 9);
                     attribs[typeName] = attribData.ConstructorArguments[0].Value;
                 }
-
             }
             return attribs;
         }

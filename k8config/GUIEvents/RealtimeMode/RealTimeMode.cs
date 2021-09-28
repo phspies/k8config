@@ -11,8 +11,10 @@ using Terminal.Gui;
 
 namespace k8config
 {
+
     partial class Program
     {
+        static bool realtimeAvailable = false;
         static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F9, "~F9~ Apply", () => ApplyDefinitions()),
@@ -24,7 +26,7 @@ namespace k8config
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    RAWYamlView(podsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["RawObject"].ToString())).Value);
+                    RAWYamlView(podsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(podsTableView.Table.Select()[podsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
                 }),
                 new StatusItem(Key.F8, "~F8~ Import", () =>
                 {
@@ -39,7 +41,7 @@ namespace k8config
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    RAWYamlView(servicesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(servicesTableView.Table.Select()[servicesTableView.SelectedRow]["RawObject"].ToString())).Value);
+                    RAWYamlView(servicesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(servicesTableView.Table.Select()[servicesTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
                 }),
                 new StatusItem(Key.F8, "~F8~ Import", () =>
                 {
@@ -54,7 +56,7 @@ namespace k8config
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    RAWYamlView(deploymentsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow]["RawObject"].ToString())).Value);
+                    RAWYamlView(deploymentsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(deploymentsTableView.Table.Select()[deploymentsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
                 }),
                 new StatusItem(Key.F8, "~F8~ Import", () =>
                 {
@@ -69,7 +71,7 @@ namespace k8config
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    RAWYamlView(namespacesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(namespaceTableView.Table.Select()[namespaceTableView.SelectedRow]["RawObject"].ToString())).Value);
+                    RAWYamlView(namespacesList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(namespaceTableView.Table.Select()[namespaceTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
                 }),
                 new StatusItem(Key.F8, "~F8~ Import", () =>
                 {
@@ -84,7 +86,7 @@ namespace k8config
                 new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
-                    RAWYamlView(replicasetsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow]["RawObject"].ToString())).Value);
+                    RAWYamlView(replicasetsList.Dictionary.FirstOrDefault(x => x.Key == Int64.Parse(replicasetsTableView.Table.Select()[replicasetsTableView.SelectedRow]["RawObject"].ToString())).Value.RawObject);
                 }),
                 new StatusItem(Key.F8, "~F8~ Import", () =>
                 {
@@ -195,14 +197,7 @@ namespace k8config
         static public void RealTimeMode()
         {
             topLevelWindowObject.Add(YAMLModeWindow);
-            //try
-            //{
-            //    k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
-            //}
-            //catch (Exception e)
-            //{
-            //    Log.Error($"Cannot load kubeconfig: {e.Message}");
-            //}
+
 
             TableView.TableStyle tableStyle = new TableView.TableStyle() { AlwaysShowHeaders = true, ShowHorizontalHeaderOverline = false, ShowHorizontalHeaderUnderline = true, ShowVerticalCellLines = true, ShowVerticalHeaderLines = true, ExpandLastColumn = false };
 

@@ -19,9 +19,9 @@ namespace k8config
                     {
                         outputList.Add($"[{x.index}] {x.KubeObject.GetNestedPropertyValue("Metadata.Name")} ({x.kind})");
                     }
-                    else if (x.KubeObject.GetPropValue("Name") != null)
+                    else if (x.KubeObject.GetDataNamePropValue("Name") != null)
                     {
-                        outputList.Add($"[{x.index}] {x.KubeObject.GetPropValue("Name")} ({x.kind})");
+                        outputList.Add($"[{x.index}] {x.KubeObject.GetDataNamePropValue("Name")} ({x.kind})");
                     }
                     else
                     {
