@@ -1,4 +1,5 @@
-﻿using k8config.GUIDeployments.RealtimeMode.DataModels;
+﻿using k8config.DataModels;
+using k8config.GUIDeployments.RealtimeMode.DataModels;
 using k8config.GUIEvents.RealtimeMode.DataModels;
 using k8s;
 using k8s.Models;
@@ -32,64 +33,63 @@ namespace k8config
         static void StartWatchersTasks()
         {
             DisposeAllWatchers();
-
             Application.MainLoop.Invoke(() =>
             {
                 lock (LockObject)
                 {
-                    namespacesList = new NamespaceListType();
-                    podsList = new PodListType();
-                    servicesList = new ServiceListType();
-                    deploymentsList = new DeploymentListType();
-                    replicasetsList = new ReplicaSetListType();
-                    eventsList = new EventListType();
+                    RealtimeModeControls.namespacesList = new NamespaceListType();
+                    RealtimeModeControls.podsList = new PodListType();
+                    RealtimeModeControls.servicesList = new ServiceListType();
+                    RealtimeModeControls.deploymentsList = new DeploymentListType();
+                    RealtimeModeControls.replicasetsList = new ReplicaSetListType();
+                    RealtimeModeControls.eventsList = new EventListType();
 
-                    podsTableView.Table = podsList.DataTable;
-                    deploymentsTableView.Table = deploymentsList.DataTable;
-                    eventsTableView.Table = eventsList.DataTableConstruct;
-                    namespaceTableView.Table = namespacesList.DataTable;
-                    replicasetsTableView.Table = replicasetsList.DataTable;
-                    servicesTableView.Table = servicesList.DataTable;
+                    RealtimeModeControls.podsTableView.Table = RealtimeModeControls.podsList.DataTable;
+                    RealtimeModeControls.deploymentsTableView.Table = RealtimeModeControls.deploymentsList.DataTable;
+                    RealtimeModeControls.eventsTableView.Table = RealtimeModeControls.eventsList.DataTableConstruct;
+                    RealtimeModeControls.namespaceTableView.Table = RealtimeModeControls.namespacesList.DataTable;
+                    RealtimeModeControls.replicasetsTableView.Table = RealtimeModeControls.replicasetsList.DataTable;
+                    RealtimeModeControls.servicesTableView.Table = RealtimeModeControls.servicesList.DataTable;
 
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Namespace.ToString();
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Name.ToString();
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ready.ToString();
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Up-To-Date"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.UpToDate.ToString();
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Available"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Available.ToString();
-                    deploymentsTableView.Style.GetOrCreateColumnStyle(deploymentsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Age.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Namespace.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Name.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ready.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Up-To-Date"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.UpToDate.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Available"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Available.ToString();
+                    RealtimeModeControls.deploymentsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.deploymentsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => RealtimeModeControls.deploymentsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Age.ToString();
 
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Ready.ToString();
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Status"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Status.ToString();
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Restarts"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Restarts.ToString();
-                    podsTableView.Style.GetOrCreateColumnStyle(podsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Ready.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Status"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Status.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Restarts"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Restarts.ToString();
+                    RealtimeModeControls.podsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.podsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => RealtimeModeControls.podsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
 
-                    namespaceTableView.Style.GetOrCreateColumnStyle(namespacesList.DataTable.Columns["Name"]).RepresentationGetter = (i) => namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
-                    namespaceTableView.Style.GetOrCreateColumnStyle(namespacesList.DataTable.Columns["Status"]).RepresentationGetter = (i) => namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Status.ToString();
-                    namespaceTableView.Style.GetOrCreateColumnStyle(namespacesList.DataTable.Columns["Age"]).RepresentationGetter = (i) => namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
+                    RealtimeModeControls.namespaceTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.namespacesList.DataTable.Columns["Name"]).RepresentationGetter = (i) => RealtimeModeControls.namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
+                    RealtimeModeControls.namespaceTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.namespacesList.DataTable.Columns["Status"]).RepresentationGetter = (i) => RealtimeModeControls.namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Status.ToString();
+                    RealtimeModeControls.namespaceTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.namespacesList.DataTable.Columns["Age"]).RepresentationGetter = (i) => RealtimeModeControls.namespacesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
 
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["Name"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["ClusterIP"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.ClusterIP.ToString();
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["ExternalIP"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.ExternalIP.ToString();
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["Ports"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ports.ToString();
-                    servicesTableView.Style.GetOrCreateColumnStyle(servicesList.DataTable.Columns["Age"]).RepresentationGetter = (i) => servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["Name"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["ClusterIP"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.ClusterIP.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["ExternalIP"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.ExternalIP.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["Ports"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ports.ToString();
+                    RealtimeModeControls.servicesTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.servicesList.DataTable.Columns["Age"]).RepresentationGetter = (i) => RealtimeModeControls.servicesList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
 
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Current"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Current.ToString();
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Desired"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Desired.ToString();
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ready.ToString();
-                    replicasetsTableView.Style.GetOrCreateColumnStyle(replicasetsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Namespace"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Namespace.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Name"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Name.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Current"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Current.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Desired"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Desired.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Ready"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value.Ready.ToString();
+                    RealtimeModeControls.replicasetsTableView.Style.GetOrCreateColumnStyle(RealtimeModeControls.replicasetsList.DataTable.Columns["Age"]).RepresentationGetter = (i) => RealtimeModeControls.replicasetsList.Dictionary.FirstOrDefault(x => x.Key == (long)i).Value?.Age.ToString();
                 }
             });
             try
             {
-                if (!string.IsNullOrWhiteSpace(proxyHost))
+                if (!string.IsNullOrWhiteSpace(GlobalVariables.proxyHost))
                 {
-                    Log.Debug($"Starting with proxy host {proxyHost}");
-                    var config = new KubernetesClientConfiguration { Host = proxyHost };
+                    GlobalVariables.Log.Debug($"Starting with proxy host {GlobalVariables.proxyHost}");
+                    var config = new KubernetesClientConfiguration { Host = GlobalVariables.proxyHost };
                     config.TcpKeepAlive = false;
                     config.SkipTlsVerify = true;
                     k8Client = new Kubernetes(config);
@@ -97,7 +97,7 @@ namespace k8config
                 else if (string.IsNullOrWhiteSpace(selectedContext))
                 {
                     selectedContext = KubernetesClientConfiguration.BuildDefaultConfig().CurrentContext;
-                    Log.Debug($"Starting with default context {selectedContext}");                   
+                    GlobalVariables.Log.Debug($"Starting with default context {selectedContext}");                   
                     var config = KubernetesClientConfiguration.BuildConfigFromConfigObject(KubernetesClientConfiguration.LoadKubeConfig(), selectedContext);
                     config.TcpKeepAlive = false;
                     config.SkipTlsVerify = true;
@@ -105,7 +105,7 @@ namespace k8config
                 }
                 else
                 {
-                    Log.Debug($"Starting with selected context {selectedContext}");
+                    GlobalVariables.Log.Debug($"Starting with selected context {selectedContext}");
                     var config = KubernetesClientConfiguration.BuildConfigFromConfigObject(KubernetesClientConfiguration.LoadKubeConfig(), selectedContext);
                     config.TcpKeepAlive = false;
                     config.SkipTlsVerify = true;
@@ -114,231 +114,229 @@ namespace k8config
             }
             catch (Exception ex)
             {
-                Log.Error($"Error building new connection context {selectedContext} context", ex, k8Client);
+                GlobalVariables.Log.Error($"Error building new connection context {selectedContext} context", ex, k8Client);
                 return;
             }
 
             try
             {
-
-                Log.Info("Starting Service Watcher");
+                GlobalVariables.Log.Info("Starting Service Watcher");
                 Task<HttpOperationResponse<V1ServiceList>> servicelistResp = k8Client.ListServiceForAllNamespacesWithHttpMessagesAsync(watch: true);
                 serviceWatcher = servicelistResp.Watch<V1Service, V1ServiceList>(onEvent: (eventType, service) =>
                 {
                     Application.MainLoop.Invoke(() =>
                     {
-                        Log.Info($"Processing Service Event: {eventType} : {JsonConvert.SerializeObject(service)}");
+                        GlobalVariables.Log.Info($"Processing Service Event: {eventType} : {JsonConvert.SerializeObject(service)}");
                         processEventDetails(eventType, service);
                         switch (eventType)
                         {
                             case WatchEventType.Added:
-                                servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Add);
+                                RealtimeModeControls.servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Add);
                                 break;
                             case WatchEventType.Modified:
-                                servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Change);
+                                RealtimeModeControls.servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Change);
                                 break;
                             case WatchEventType.Deleted:
-                                servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Delete);
+                                RealtimeModeControls.servicesList.AddUpdateDelete(new ServiceType(service), CRUDOperation.Delete);
                                 break;
                             case WatchEventType.Error:
-                                Log.Error("Error Event: error in watch thread");
+                                GlobalVariables.Log.Error("Error Event: error in watch thread");
                                 break;
                             case WatchEventType.Bookmark:
-                                Log.Error("Bookmark Event: error in watch thread");
+                                GlobalVariables.Log.Error("Bookmark Event: error in watch thread");
                                 break;
                             default:
-                                Log.Error("default event: error in watch thread");
+                                GlobalVariables.Log.Error("default event: error in watch thread");
                                 break;
                         }
-                        servicesTableView.SetNeedsDisplay();
+                        RealtimeModeControls.servicesTableView.SetNeedsDisplay();
                         UpdateTabHeaders();
                     });
 
                 }, onError: (ex) =>
                 {
-                    Log.Error(ex);
+                    GlobalVariables.Log.Error(ex);
                 },
                     onClosed: () =>
                     {
-                        Log.Error("Namespace Watcher closed connection");
+                        GlobalVariables.Log.Error("Namespace Watcher closed connection");
                     });
-                Log.Info("Starting Namespace Watcher");
+                GlobalVariables.Log.Info("Starting Namespace Watcher");
                 Task<HttpOperationResponse<V1NamespaceList>> namespacelistResp = k8Client.ListNamespaceWithHttpMessagesAsync(watch: true);
                 namespaceWatcher = namespacelistResp.Watch<V1Namespace, V1NamespaceList>(
                     onEvent: (eventType, _namespace) =>
                     {
                         Application.MainLoop.Invoke(() =>
                         {
-                            Log.Info($"Processing Namespace Event: {eventType} : {JsonConvert.SerializeObject(_namespace)}");
+                            GlobalVariables.Log.Info($"Processing Namespace Event: {eventType} : {JsonConvert.SerializeObject(_namespace)}");
                             processEventDetails(eventType, _namespace);
                             switch (eventType)
                             {
                                 case WatchEventType.Added:
-                                    namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Add);
+                                    RealtimeModeControls.namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Add);
                                     break;
                                 case WatchEventType.Modified:
-                                    namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Change);
+                                    RealtimeModeControls.namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Change);
                                     break;
                                 case WatchEventType.Deleted:
-                                    namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Delete);
+                                    RealtimeModeControls.namespacesList.AddUpdateDelete(new NamespaceType(_namespace), CRUDOperation.Delete);
                                     break;
                                 case WatchEventType.Error:
-                                    Log.Error("Error Event: error in watch thread");
+                                    GlobalVariables.Log.Error("Error Event: error in watch thread");
                                     break;
                                 case WatchEventType.Bookmark:
-                                    Log.Error("Bookmark Event: error in watch thread");
+                                    GlobalVariables.Log.Error("Bookmark Event: error in watch thread");
                                     break;
                                 default:
-                                    Log.Error("default event: error in watch thread");
+                                    GlobalVariables.Log.Error("default event: error in watch thread");
                                     break;
                             }
-                            namespaceTableView.SetNeedsDisplay();
+                            RealtimeModeControls.namespaceTableView.SetNeedsDisplay();
                             UpdateTabHeaders();
                         });
-
                     },
                     onError: (ex) =>
                             {
-                                Log.Error(ex);
+                                GlobalVariables.Log.Error(ex);
                             },
                     onClosed: () =>
                     {
-                        Log.Error("Namespace Watcher closed connection");
+                        GlobalVariables.Log.Error("Namespace Watcher closed connection");
                     });
 
-                Log.Info("Starting Pod Watcher");
+                GlobalVariables.Log.Info("Starting Pod Watcher");
                 Task<HttpOperationResponse<V1PodList>> podlistResp = k8Client.ListPodForAllNamespacesWithHttpMessagesAsync(watch: true);
                 podWatcher = podlistResp.Watch<V1Pod, V1PodList>(onEvent: (eventType, pod) =>
                 {
                     Application.MainLoop.Invoke(() =>
                     {
-                        Log.Info($"Processing Pod Event: {eventType} : {JsonConvert.SerializeObject(pod)}");
+                        GlobalVariables.Log.Info($"Processing Pod Event: {eventType} : {JsonConvert.SerializeObject(pod)}");
                         processEventDetails(eventType, pod);
                         switch (eventType)
                         {
                             case WatchEventType.Added:
-                                podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Add);
+                                RealtimeModeControls.podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Add);
                                 break;
                             case WatchEventType.Modified:
-                                podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Change);
+                                RealtimeModeControls.podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Change);
                                 break;
                             case WatchEventType.Deleted:
-                                podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Delete);
+                                RealtimeModeControls.podsList.AddUpdateDelete(new PodType(pod), CRUDOperation.Delete);
                                 break;
                             case WatchEventType.Error:
-                                Log.Error("Error Event: error in watch thread");
+                                GlobalVariables.Log.Error("Error Event: error in watch thread");
                                 break;
                             case WatchEventType.Bookmark:
-                                Log.Error("Bookmark Event: error in watch thread");
+                                GlobalVariables.Log.Error("Bookmark Event: error in watch thread");
                                 break;
                             default:
-                                Log.Error("default event: error in watch thread");
+                                GlobalVariables.Log.Error("default event: error in watch thread");
                                 break;
                         }
-                        podsTableView.SetNeedsDisplay();
+                        RealtimeModeControls.podsTableView.SetNeedsDisplay();
                         UpdateTabHeaders();
                     });
 
                 }, onError: (ex) =>
                 {
-                    Log.Error(ex);
+                    GlobalVariables.Log.Error(ex);
                 },
                     onClosed: () =>
                     {
-                        Log.Error("Pod Watcher closed connection");
+                        GlobalVariables.Log.Error("Pod Watcher closed connection");
                     });
-                Log.Info("Starting Deployment Watcher");
+                GlobalVariables.Log.Info("Starting Deployment Watcher");
                 Task<HttpOperationResponse<V1DeploymentList>> deploymentlistResp = k8Client.ListDeploymentForAllNamespacesWithHttpMessagesAsync(watch: true);
                 deploymentWatcher = deploymentlistResp.Watch<V1Deployment, V1DeploymentList>((eventType, deployment) =>
                 {
                     Application.MainLoop.Invoke(() =>
                     {
-                        Log.Info($"Processing Deployment Event: {eventType} : {JsonConvert.SerializeObject(deployment)}");
+                        GlobalVariables.Log.Info($"Processing Deployment Event: {eventType} : {JsonConvert.SerializeObject(deployment)}");
                         processEventDetails(eventType, deployment);
                         switch (eventType)
                         {
                             case WatchEventType.Added:
-                                deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Add);
+                                RealtimeModeControls.deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Add);
                                 break;
                             case WatchEventType.Modified:
-                                deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Change);
+                                RealtimeModeControls.deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Change);
                                 break;
                             case WatchEventType.Deleted:
-                                deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Delete);
+                                RealtimeModeControls.deploymentsList.AddUpdateDelete(new DeploymentType(deployment), CRUDOperation.Delete);
                                 break;
                             case WatchEventType.Error:
-                                Log.Error("Error Event: error in watch thread");
+                                GlobalVariables.Log.Error("Error Event: error in watch thread");
                                 break;
                             case WatchEventType.Bookmark:
-                                Log.Error("Bookmark Event: error in watch thread");
+                                GlobalVariables.Log.Error("Bookmark Event: error in watch thread");
                                 break;
                             default:
-                                Log.Error("default event: error in watch thread");
+                                GlobalVariables.Log.Error("default event: error in watch thread");
                                 break;
                         }
-                        deploymentsTableView.SetNeedsDisplay();
+                        RealtimeModeControls.deploymentsTableView.SetNeedsDisplay();
                         UpdateTabHeaders();
                     });
                 }, onError: (ex) =>
                 {
-                    Log.Error(ex);
+                    GlobalVariables.Log.Error(ex);
                 },
                     onClosed: () =>
                     {
-                        Log.Error("Deployments Watcher closed connection");
+                        GlobalVariables.Log.Error("Deployments Watcher closed connection");
                     });
-                Log.Info("Starting ReplicationSet Watcher");
+                GlobalVariables.Log.Info("Starting ReplicationSet Watcher");
                 Task<HttpOperationResponse<V1ReplicaSetList>> replicasetlistResp = k8Client.ListReplicaSetForAllNamespacesWithHttpMessagesAsync(watch: true);
                 replicationsetWatcher = replicasetlistResp.Watch<V1ReplicaSet, V1ReplicaSetList>(
                     onEvent: (eventType, replicationset) =>
                 {
                     Application.MainLoop.Invoke(() =>
                     {
-                        Log.Info($"Processing ReplicationSet Event: {eventType} : {JsonConvert.SerializeObject(replicationset)}");
+                        GlobalVariables.Log.Info($"Processing ReplicationSet Event: {eventType} : {JsonConvert.SerializeObject(replicationset)}");
                         processEventDetails(eventType, replicationset);
                         switch (eventType)
                         {
                             case WatchEventType.Added:
-                                replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Add);
+                                RealtimeModeControls.replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Add);
                                 break;
                             case WatchEventType.Modified:
-                                replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Change);
+                                RealtimeModeControls.replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Change);
                                 break;
                             case WatchEventType.Deleted:
-                                replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Delete);
+                                RealtimeModeControls.replicasetsList.AddUpdateDelete(new ReplicaSetType(replicationset), CRUDOperation.Delete);
                                 break;
                             case WatchEventType.Error:
-                                Log.Error("Error Event: error in watch thread");
+                                GlobalVariables.Log.Error("Error Event: error in watch thread");
                                 break;
                             case WatchEventType.Bookmark:
-                                Log.Error("Bookmark Event: error in watch thread");
+                                GlobalVariables.Log.Error("Bookmark Event: error in watch thread");
                                 break;
                             default:
-                                Log.Error("default event: error in watch thread");
+                                GlobalVariables.Log.Error("default event: error in watch thread");
                                 break;
                         }
-                        replicasetsTableView.SetNeedsDisplay();
+                        RealtimeModeControls.replicasetsTableView.SetNeedsDisplay();
                         UpdateTabHeaders();
                     });
                 }, onError: (ex) =>
                 {
-                    Log.Error(ex);
+                    GlobalVariables.Log.Error(ex);
                 },
                     onClosed: () =>
                     {
-                        Log.Error("ReplicaSets Watcher closed connection");
+                        GlobalVariables.Log.Error("ReplicaSets Watcher closed connection");
                     });
             }
             catch (Exception ex)
             {
-                Log.Error($"Error starting watchers to {selectedContext} context", ex, null);
+                GlobalVariables.Log.Error($"Error starting watchers to {selectedContext} context", ex, null);
             }
         }
 
         static void processEventDetails(WatchEventType _eventType, object _object)
         {
-            eventsTableView.SetNeedsDisplay();
-            eventsList.Add(new EventType(_eventType, _object));
+            RealtimeModeControls.eventsTableView.SetNeedsDisplay();
+            RealtimeModeControls.eventsList.Add(new EventType(_eventType, _object));
         }
     }
 }

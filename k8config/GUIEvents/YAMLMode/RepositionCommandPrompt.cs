@@ -1,9 +1,6 @@
 ﻿using k8config.DataModels;
-using System;
-using System.Collections.Generic;
+using k8config.GUIEvents;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terminal.Gui;
 
 namespace k8config
@@ -12,11 +9,9 @@ namespace k8config
     {
         static void repositionCommandInput()
         {
-            commandPromptLabel.Text = string.Join(":", GlobalVariables.promptArray) + ">";
-            commandPromptLabel.Width = commandPromptLabel.Text.Count() + 1;
-            commandPromptTextField.X = Pos.Right(commandPromptLabel);
-       
-
+            YAMLModelControls.commandPromptLabel.Text = YAMLModePromptObject.PromptConstructor;
+            YAMLModelControls.commandPromptLabel.Width = YAMLModelControls.commandPromptLabel.Text.Count() + 1;
+            YAMLModelControls.commandPromptTextField.X = Pos.Right(YAMLModelControls.commandPromptLabel);
         }
     }
 }

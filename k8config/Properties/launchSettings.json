@@ -6,7 +6,8 @@
       "distributionName": ""
     },
     "Profile 1": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--file=c:\\users\\phillip\\mysql.yaml"
     }
   }
 }

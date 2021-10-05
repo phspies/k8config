@@ -8,7 +8,7 @@ namespace k8config
 {
     partial class Program
     {
-        static void ImportDefinition(object importObject)
+        public static void ImportDefinition(object importObject)
         {
             Application.MainLoop.Invoke(() =>
             {

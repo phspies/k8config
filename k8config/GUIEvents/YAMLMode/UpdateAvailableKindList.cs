@@ -10,22 +10,22 @@ namespace k8config
         static List<OptionsSlimType> currentAvailableOptions = new List<OptionsSlimType>();
         static void updateAvailableKindsList()
         {
-            if (currentavailableListUpDown)
+            if (GlobalVariables.currentavailableListUpDown)
             {
-                currentavailableListUpDown = false;
+                GlobalVariables.currentavailableListUpDown = false;
             }
             else
             {
                 Tuple<string, List<OptionsSlimType>> returnValues = retrieveAvailableOptions();
-                availableKindsWindow.Title = returnValues.Item1;
+                YAMLModelControls.availableKindsWindow.Title = returnValues.Item1;
                 currentAvailableOptions = returnValues.Item2;
-                availableKindsListView.SetSource(returnValues.Item2.Select(x => x.TableView()).ToList());
-                if (!string.IsNullOrWhiteSpace(commandPromptTextField.Text.ToString()))
+                YAMLModelControls.availableKindsListView.SetSource(returnValues.Item2.Select(x => x.TableView).ToList());
+                if (!string.IsNullOrWhiteSpace(YAMLModelControls.commandPromptTextField.Text.ToString()))
                 {
-                    var currentListObect = ((List<String>)availableKindsListView.Source.ToList()).Find(x => x.StartsWith(commandPromptTextField.Text.ToString()));
+                    var currentListObect = ((List<String>)YAMLModelControls.availableKindsListView.Source.ToList()).Find(x => x.StartsWith(YAMLModelControls.commandPromptTextField.Text.ToString()));
                     if (!string.IsNullOrWhiteSpace(currentListObect))
                     {
-                        availableKindsListView.SelectedItem = availableKindsListView.Source.ToList().IndexOf(currentListObect);
+                        YAMLModelControls.availableKindsListView.SelectedItem = YAMLModelControls.availableKindsListView.Source.ToList().IndexOf(currentListObect);
                     }
                 };
             }

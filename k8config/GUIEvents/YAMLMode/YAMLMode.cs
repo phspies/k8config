@@ -1,76 +1,18 @@
 ﻿using k8config.DataModels;
-using k8config.GUIEvents.YAMLMode;
-using k8s.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using k8config.GUIEvents;
 using Terminal.Gui;
 
 namespace k8config
 {
     partial class Program
     {
-        static Window YAMLModeWindow = new Window()
-        {
-            Border = new Border()
-            {
-                BorderStyle = BorderStyle.None,
-                DrawMarginFrame = false,
-                Effect3D = false,
-            },
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-
-        };
-        static List<string> sessionHistory = new List<string>();
-        static int sessionHistoryIndex = 0;
-        static ListView availableKindsListView = new ListView();
-        static Label commandPromptLabel = new Label();
-        static Window commandWindow = new Window();
-        static TextField commandPromptTextField = new TextField("");
-        static Window definedYAMLWindow = new Window();
-        static Window availableKindsWindow = new Window();
-        static ListView definedYAMLListView = new ListView();
-        static Window descriptionWindow = new Window();
-        static TextView descriptionView = new TextView();
-        static Button closeValidationWindowButton = new Button("Close", true);
-        static Dialog validationWindow = new Dialog("Validation Status", 80, 17, closeValidationWindowButton)
-        {
-            X = Pos.Center(),
-            Y = Pos.Center(),
-            Visible = false,
-        };
-        static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Quit()) { Environment.Exit(0); }}),
-                new StatusItem(Key.F2, "~F2~ Validate", () => {
-                    if (!validationWindow.Visible)
-                    {
-                        List<string> objectionsList = YAMLOperations.Validate();
-                        var validationlistView = new ListView(objectionsList)
-                        {
-                            Width = validationWindow.Bounds.Width - 2,
-                            Height = validationWindow.Bounds.Height - 4,
-                            X = validationWindow.Bounds.Top + 2,
-                            Y = Pos.Center()
-                        };
-                        validationWindow.Add(validationlistView);
-
-                        validationWindow.Visible = true;
-                        closeValidationWindowButton.SetFocus();
-                    }
-                }),
-
-               new StatusItem(Key.CharMask, "No Defintions Found", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
-
-            };
+  
 
         static public void YAMLMode()
         {
-
-            statusBar.Items = interactiveStatusBarItems;
-            availableKindsWindow = new Window()
+            topLevelWindowObject.Add(YAMLModelControls.YAMLModeWindow);
+            statusBar.Items = YAMLModelControls.interactiveStatusBarItems;
+            YAMLModelControls.availableKindsWindow = new Window()
             {
                 Title = "Available Commands",
                 X = 0,
@@ -82,24 +24,24 @@ namespace k8config
                 ColorScheme = colorNormal,
 
             };
-            descriptionWindow = new Window()
+            YAMLModelControls.descriptionWindow = new Window()
             {
                 Title = "Description",
                 X = 0,
-                Y = availableKindsWindow.Bounds.Bottom,
+                Y = YAMLModelControls.availableKindsWindow.Bounds.Bottom,
                 Width = Dim.Fill(),
                 Height = 5,
                 TabStop = false,
                 CanFocus = false,
                 ColorScheme = colorNormal,
             };
-            descriptionView = new TextView()
+            YAMLModelControls.descriptionView = new TextView()
             {
 
                 Y = 0,
                 X = 0,
-                Width = Dim.Fill(),
-                Height = Dim.Fill(),
+                Width = 80,
+                Height = 1,
                 Text = "No definitions found. Please create a definition with the 'new <kind>' command.",
                 ColorScheme = colorNormal,
                 ReadOnly = true,
@@ -108,14 +50,13 @@ namespace k8config
                 CanFocus = false,
                 AllowsTab = false,
                 Multiline = true,
-
             };
 
 
-            definedYAMLWindow = new Window()
+            YAMLModelControls.definedYAMLWindow = new Window()
             {
                 Title = "Selected Definition",
-                X = availableKindsWindow.Bounds.Right,
+                X = YAMLModelControls.availableKindsWindow.Bounds.Right,
                 Y = 0,
                 Width = Dim.Fill(),
                 Height = Dim.Fill() - 9,
@@ -124,10 +65,10 @@ namespace k8config
                 ColorScheme = colorNormal
 
             };
-            commandWindow = new Window()
+            YAMLModelControls.commandWindow = new Window()
             {
                 Title = "Command Line",
-                Y = descriptionWindow.Bounds.Bottom,
+                Y = YAMLModelControls.descriptionWindow.Bounds.Bottom,
                 Width = Dim.Fill(),
                 Height = 3,
                 ColorScheme = colorNormal,
@@ -136,10 +77,10 @@ namespace k8config
             };
 
 
-            commandPromptLabel = new Label(string.Join(":", GlobalVariables.promptArray) + ">") { TextAlignment = TextAlignment.Left, X = 1, TabStop = false };
-            commandPromptTextField = new TextField("") { X = Pos.Right(commandPromptLabel) + 1, Width = Dim.Fill(), TabStop = true };
+            YAMLModelControls.commandPromptLabel = new Label(YAMLModePromptObject.PromptConstructor) { TextAlignment = TextAlignment.Left, X = 1, TabStop = false };
+            YAMLModelControls.commandPromptTextField = new TextField("") { X = Pos.Right(YAMLModelControls.commandPromptLabel) + 1, Width = Dim.Fill(), TabStop = true };
 
-            definedYAMLListView = new ListView()
+            YAMLModelControls.definedYAMLListView = new ListView()
             {
                 X = 0,
                 Y = 0,
@@ -152,8 +93,8 @@ namespace k8config
                 ColorScheme = colorSelector,
 
             };
-            definedYAMLWindow.Add(definedYAMLListView);
-            availableKindsListView = new ListView()
+            YAMLModelControls.definedYAMLWindow.Add(YAMLModelControls.definedYAMLListView);
+            YAMLModelControls.availableKindsListView = new ListView()
             {
                 X = 0,
                 Y = 0,
@@ -166,23 +107,31 @@ namespace k8config
                 ColorScheme = colorSelector
             };
 
-            availableKindsWindow.Add(availableKindsListView);
-            YAMLModeWindow.Add(commandWindow, definedYAMLWindow);
-            YAMLModeWindow.Add(availableKindsWindow);
+            YAMLModelControls.availableKindsWindow.Add(YAMLModelControls.availableKindsListView);
+            YAMLModelControls.YAMLModeWindow.Add(YAMLModelControls.commandWindow, YAMLModelControls.definedYAMLWindow);
+            YAMLModelControls.YAMLModeWindow.Add(YAMLModelControls.availableKindsWindow);
             //commandWindow.Add(messageBarItem);
-            descriptionWindow.Add(descriptionView);
-            YAMLModeWindow.Add(descriptionWindow);
-            commandWindow.Add(commandPromptLabel, commandPromptTextField);
-            topLevelWindowObject.Add(YAMLModeWindow);
-            YAMLModeWindow.Add(validationWindow);
-            closeValidationWindowButton.Clicked += () =>
+            YAMLModelControls.descriptionWindow.Add(YAMLModelControls.descriptionView);
+            YAMLModelControls.YAMLModeWindow.Add(YAMLModelControls.descriptionWindow);
+            YAMLModelControls.commandWindow.Add(YAMLModelControls.commandPromptLabel, YAMLModelControls.commandPromptTextField);
+            topLevelWindowObject.Add(YAMLModelControls.YAMLModeWindow);
+            YAMLModelControls.YAMLModeWindow.Add(YAMLModelControls.validationWindow);
+            YAMLModelControls.closeValidationWindowButton.Clicked += () =>
             {
-                validationWindow.Visible = false;
-                commandPromptTextField.SetFocus();
+                YAMLModelControls.validationWindow.Visible = false;
+                YAMLModelControls.commandPromptTextField.SetFocus();
             };
             
-            ToggleDisplayMode();
 
+            ToggleDisplayMode();
+            paintYAML();
+            if (!string.IsNullOrWhiteSpace(GlobalVariables.startupString))
+            {
+                UpdateMessageBar(GlobalVariables.startupString);
+                updateAvailableKindsList();
+                
+            }
+            UpdateDescriptionView();
         }
     }
 }

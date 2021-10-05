@@ -1,10 +1,4 @@
 ﻿using k8config.DataModels;
-using k8s.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace k8config
 {
@@ -15,9 +9,9 @@ namespace k8config
             if (GlobalVariables.displayMode == 0)
             {
                 GlobalVariables.displayMode = 1;
-                YAMLModeWindow.Visible = false;
-                statusBar.Items = realtimeStatusBarItems;
-                realtimeModeWindow.Visible = true;
+                YAMLModelControls.YAMLModeWindow.Visible = false;
+                statusBar.Items = RealtimeModeControls.realtimeStatusBarItems;
+                RealtimeModeControls.realtimeModeWindow.Visible = true;
                 UpdateStatusBar();
                 StartWatchersTasks();
             }
@@ -25,10 +19,10 @@ namespace k8config
             {
                 DisposeAllWatchers();
                 GlobalVariables.displayMode = 0;
-                YAMLModeWindow.Visible = true;
-                realtimeModeWindow.Visible = false;
-                statusBar.Items = interactiveStatusBarItems;
-                commandPromptTextField.SetFocus();
+                YAMLModelControls.YAMLModeWindow.Visible = true;
+                RealtimeModeControls.realtimeModeWindow.Visible = false;
+                statusBar.Items = YAMLModelControls.interactiveStatusBarItems;
+                YAMLModelControls.commandPromptTextField.SetFocus();
                 updateAvailableKindsList();
                 //UpdateDescriptionView();
             }

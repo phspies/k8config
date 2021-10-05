@@ -1,12 +1,12 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents.YAMLMode;
 using k8s;
-using k8s.Models;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -19,6 +19,7 @@ namespace k8config.Utilities
     {
         public static void DeserializeFile(string fileLocation)
         {
+            Logger Log = LogManager.GetCurrentClassLogger();
             var stream = new StreamReader(fileLocation);
             var reader = new Parser(stream);
             reader.Consume<StreamStart>();
@@ -31,19 +32,34 @@ namespace k8config.Utilities
                 if (tempExpandoObject != null)
                 {
                     var dict = (IDictionary<string, object>)tempExpandoObject;
-                    if (!String.IsNullOrWhiteSpace(dict["kind"] as string))
+                    if (!string.IsNullOrWhiteSpace(dict["kind"] as string))
                     {
-                        GlobalAssemblyKubeType _type = GlobalVariables.availableKubeTypes.Find(x => x.kind.ToLower() == ((string)dict["kind"]).ToLower());
+                        string apiVersion = String.Empty;
+                        if (((string)dict["apiVersion"]).Contains("/"))
+                        {
+                            apiVersion = ((string)dict["apiVersion"]).Split("/")[1];
+                        }
+                        else
+                        {
+                            apiVersion = ((string)dict["apiVersion"]);
+                        }
+                        
+                        GlobalAssemblyKubeType _type = GlobalVariables.availableKubeTypes.Find(x => (string.Compare(x.kind,(string)dict["kind"],StringComparison.OrdinalIgnoreCase) == 0) && (string.Compare(x.version, apiVersion, StringComparison.OrdinalIgnoreCase) == 0));
                         if (_type != null)
                         {
+                            Log.Info($"Definition imported - kind:{dict["kind"]} apiVerion:{dict["apiVersion"]} kubeType: {_type.classKind}");
                             GlobalVariables.sessionDefinedKinds.Add(new SessionDefinedKind()
                             {
                                 index = index,
-                                kind = dict["kind"] as string,
-                                name = dict["kind"] as string,
+                                kind = _type.classKind,
+                                name = _type.classKind,
                                 KubeObject = Yaml.Deserializer.Deserialize(Newtonsoft.Json.JsonConvert.SerializeObject(tempExpandoObject), Type.GetType(_type.assemblyFullName))
                             });;
                             index++;
+                        }
+                        else
+                        {
+                            Log.Debug($"Definition importefailed - Type not found in available types: kind:{dict["kind"]} apiVerion:{dict["apiVersion"]}");
                         }
                     }
                 }
@@ -58,7 +74,7 @@ namespace k8config.Utilities
             {
                 foreach (object _kubeobject in GlobalVariables.sessionDefinedKinds.Select(x => x.KubeObject))
                 {
-                    Yaml.YAMLSerializer.Serialize(sw, _kubeobject);
+                    YAMLOperations.SerializeObjectToList(_kubeobject).ForEach(line => sw.WriteLine(line));
                     if (!_kubeobject.Equals(GlobalVariables.sessionDefinedKinds.Last().KubeObject))
                         sw.WriteLine("---");
                 }

@@ -1,8 +1,6 @@
-﻿using System;
+﻿using k8config.DataModels;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace k8config
 {
@@ -13,12 +11,12 @@ namespace k8config
             string availableOption = "";
             if (_availableOptions.Count() > 0)
             {
-                if (autoCompleteInterruptIndex > _availableOptions.Count - 1)
+                if (GlobalVariables.autoCompleteInterruptIndex > _availableOptions.Count - 1)
                 {
-                    autoCompleteInterruptIndex = 0;
+                    GlobalVariables.autoCompleteInterruptIndex = 0;
                 }
-                availableOption = _availableOptions[autoCompleteInterruptIndex];
-                autoCompleteInterruptIndex++;
+                availableOption = _availableOptions[GlobalVariables.autoCompleteInterruptIndex];
+                GlobalVariables.autoCompleteInterruptIndex++;
             }
             return availableOption;
         }

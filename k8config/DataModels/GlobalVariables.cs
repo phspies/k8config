@@ -1,39 +1,22 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using NLog;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace k8config.DataModels
 {
     public static class GlobalVariables
     {
-        public static string k8configVersion = "k8config v1.0.0";
-        public static JObject availbleDefinitions;
-        public static List<string> promptArray = new List<string>() { "yaml" };
-        public static List<SourceGroupType> groupSourceKinds = new List<SourceGroupType>();
-        public static List<TargetGroupType> groupTargetKinds = new List<TargetGroupType>();
-        public static List<string> ignoreProperties = new List<string>() { "kind", "apiVersion", "status" };
-        public static bool valuePromptMode = false;
-
-
+        public static string k8configAppFolder = string.Empty;
         public static int displayMode = 1;
         public static List<SessionDefinedKind> sessionDefinedKinds = new List<SessionDefinedKind>();
         public static List<GlobalAssemblyKubeType> availableKubeTypes = new List<GlobalAssemblyKubeType>();
+        public static string k8configVersion = "k8config " + Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+        public static string autoCompleteInterruptText = "";
+        public static int autoCompleteInterruptIndex = 0;
+        public static bool currentavailableListUpDown = false;
+        public static Logger Log;
+        public static string proxyHost = string.Empty;
+        public static string startupString = string.Empty;
     }
-
-  
-    public class GlobalAssemblyKubeType
-    {
-        public string kind { get; set;}
-        public string assemblyFullName { get; set; }
-        public string group { get; set; }
-        public string version { get; set; }
  
-    }
-    public class SessionDefinedKind
-    {
-        public string name { get; set; }
-        public int index { get; set; }
-        public string kind { get; set; }
-        public Object KubeObject { get; set; }
-    }
 }

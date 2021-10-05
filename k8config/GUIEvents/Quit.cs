@@ -9,7 +9,7 @@ namespace k8config
 {
     partial class Program
     {
-        static bool Quit()
+        public static bool Quit()
         {
             int selectedOption = MessageBox.Query(50, 5, "Quit", "Are you sure you want to quit k8config?", "Yes", "No");
             return (selectedOption == 0);

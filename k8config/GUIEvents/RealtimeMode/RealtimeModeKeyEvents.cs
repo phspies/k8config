@@ -1,4 +1,5 @@
-﻿using k8s;
+﻿using k8config.DataModels;
+using k8s;
 using System.Collections.Generic;
 using Terminal.Gui;
 
@@ -27,11 +28,11 @@ namespace k8config
         public static void realtimeModeKeyEvents()
         {
 
-            availableContextsListView.KeyUp += (e) =>
+            RealtimeModeControls.availableContextsListView.KeyUp += (e) =>
             {
                 if (e.KeyEvent.Key == Key.Enter)
                 {
-                    selectedContext = ((List<string>)availableContextsListView.Source.ToList())[availableContextsListView.SelectedItem];
+                    selectedContext = ((List<string>)RealtimeModeControls.availableContextsListView.Source.ToList())[RealtimeModeControls.availableContextsListView.SelectedItem];
                     StartWatchersTasks();
                 }
             };

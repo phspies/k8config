@@ -1,8 +1,6 @@
-﻿using k8config.DataModels;
-using k8config.Utilities;
+﻿using k8config.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Terminal.Gui;
 
 namespace k8config

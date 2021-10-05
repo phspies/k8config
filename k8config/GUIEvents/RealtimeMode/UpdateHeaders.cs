@@ -1,4 +1,5 @@
-﻿using System;
+﻿using k8config.DataModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,18 +11,12 @@ namespace k8config
     {
         public static void UpdateTabHeaders()
         {
-            namespacesTab.Text = $" Namespaces ({namespacesList.Dictionary.Count}) ";
-            podsTab.Text = $" Pods ({podsList.Dictionary.Count}) ";
-            servicesTab.Text = $" Services ({servicesList.Dictionary.Count}) ";
-            deploymentsTab.Text = $" Deployments ({deploymentsList.Dictionary.Count}) ";
-            replicasetsTab.Text = $" Replica Sets ({replicasetsList.Dictionary.Count}) ";
-            eventsTab.Text = $" Events ({eventsList.DataTableConstruct.Rows.Count}) ";
-
-            //move table down to the latest entry
-            //eventsTableView.Move(0, eventsTable.Rows.Count - 1);
-
-            //update message bar
-            //UpdateMessageBar($"Connected to {selectedContext}");
+            RealtimeModeControls.namespacesTab.Text = $" Namespaces ({RealtimeModeControls.namespacesList.Dictionary.Count}) ";
+            RealtimeModeControls.podsTab.Text = $" Pods ({RealtimeModeControls.podsList.Dictionary.Count}) ";
+            RealtimeModeControls.servicesTab.Text = $" Services ({RealtimeModeControls.servicesList.Dictionary.Count}) ";
+            RealtimeModeControls.deploymentsTab.Text = $" Deployments ({RealtimeModeControls.deploymentsList.Dictionary.Count}) ";
+            RealtimeModeControls.replicasetsTab.Text = $" Replica Sets ({RealtimeModeControls.replicasetsList.Dictionary.Count}) ";
+            RealtimeModeControls.eventsTab.Text = $" Events ({RealtimeModeControls.eventsList.DataTableConstruct.Rows.Count}) ";
         }
     }
 }

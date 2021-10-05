@@ -11,11 +11,11 @@ namespace k8config
 {
     partial class Program
     {
-        static Toplevel topLevelWindowObject = Application.Top;
-        static ColorScheme colorNormal = new ColorScheme();
-        static ColorScheme colorSelector = new ColorScheme();
-        static StatusBar statusBar = new StatusBar();
-        static void SetupTopLevelView()
+        public static Toplevel topLevelWindowObject = Application.Top;
+        public static ColorScheme colorNormal = new ColorScheme();
+        public static ColorScheme colorSelector = new ColorScheme();
+        public static StatusBar statusBar = new StatusBar();
+        public static void SetupTopLevelView()
         {
 
             topLevelWindowObject.Clear();
@@ -39,28 +39,33 @@ namespace k8config
                 HotFocus = new Terminal.Gui.Attribute(Color.White, Color.Red),
                 Disabled = new Terminal.Gui.Attribute(Color.DarkGray, Color.Black)
             };
+           
             //Fire top level drawEvents
             topLevelWindowObject.DrawContent += (e) =>
             {
-
                 if (GlobalVariables.displayMode == 0)
                 {
- 
-                    availableKindsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.30);
-                    availableKindsWindow.Height = Convert.ToInt16(topLevelWindowObject.Bounds.Height * 0.70);
-                    definedYAMLWindow.X = availableKindsWindow.Bounds.Right;
-                    definedYAMLWindow.Height = availableKindsWindow.Bounds.Height;
-                    commandWindow.Y = topLevelWindowObject.Bounds.Height - 4;
-                    descriptionWindow.X = 0;
-                    descriptionWindow.Y = availableKindsWindow.Bounds.Bottom;
-                    descriptionWindow.Height = topLevelWindowObject.Bounds.Height-definedYAMLWindow.Height - commandWindow.Height-1;
+                    YAMLModelControls.descriptionView.Width = Dim.Fill();
+                    YAMLModelControls.descriptionView.Height = Dim.Fill();
+                    YAMLModelControls.availableKindsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.30);
+                    YAMLModelControls.availableKindsWindow.Height = Convert.ToInt16(topLevelWindowObject.Bounds.Height * 0.70);
+                    YAMLModelControls.definedYAMLWindow.X = YAMLModelControls.availableKindsWindow.Bounds.Right;
+                    YAMLModelControls.definedYAMLWindow.Height = YAMLModelControls.availableKindsWindow.Bounds.Height;
+                    YAMLModelControls.commandWindow.Y = topLevelWindowObject.Bounds.Height - 4;
+                    YAMLModelControls.descriptionWindow.X = 0;
+                    YAMLModelControls.descriptionWindow.Y = YAMLModelControls.availableKindsWindow.Bounds.Bottom;
+                    YAMLModelControls.descriptionWindow.Height = topLevelWindowObject.Bounds.Height - YAMLModelControls.definedYAMLWindow.Height - YAMLModelControls.commandWindow.Height-1;
                 }
                 else if (GlobalVariables.displayMode == 1)
                 {
-                    availableContextsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.20);
-                    contextDetailTabs.X = availableContextsWindow.Bounds.Right;
-                    contextDetailTabs.Width = Dim.Fill();
+                    RealtimeModeControls.availableContextsWindow.Width = Convert.ToInt16(topLevelWindowObject.Bounds.Width * 0.20);
+                    RealtimeModeControls.contextDetailTabs.X = RealtimeModeControls.availableContextsWindow.Bounds.Right;
+                    RealtimeModeControls.contextDetailTabs.Width = Dim.Fill();
                 }
+                YAMLModelControls.k8configVersion.X = topLevelWindowObject.Bounds.Width - YAMLModelControls.k8configVersion.Text.Length - 2;
+                YAMLModelControls.k8configVersion.Y = topLevelWindowObject.Bounds.Height - 1;
+                YAMLModelControls.k8configVersion.ColorScheme = new ColorScheme() { Normal = new Terminal.Gui.Attribute(Color.White, Color.DarkGray) };
+                topLevelWindowObject.BringSubviewToFront(YAMLModelControls.k8configVersion);
             };
         }
     }

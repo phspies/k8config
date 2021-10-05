@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents;
 using k8config.Utilities;
 using k8s.Models;
 using System;
@@ -13,72 +14,74 @@ namespace k8config
     {
         static public void YamlModeKeyEvents()
         {
-            YAMLModeWindow.KeyUp += (e) =>
+            YAMLModelControls.YAMLModeWindow.KeyUp += (e) =>
             {
-                string currentInputText = commandPromptTextField.Text.ToString();
+                string currentInputText = YAMLModelControls.commandPromptTextField.Text.ToString();
                 if (e.KeyEvent.Key == (Key.CtrlMask | Key.C))
                 {
-                    commandPromptTextField.Text = "";
-                    commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                    YAMLModelControls.commandPromptTextField.Text = "";
+                    YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                 }
                 if (e.KeyEvent.Key == (Key.CtrlMask | Key.Z) || e.KeyEvent.Key == (Key.CtrlMask | Key.A) || e.KeyEvent.Key == Key.CursorUp || e.KeyEvent.Key == Key.CursorDown)
                 {
+                    string[] args = YAMLModelControls.commandPromptTextField.Text.ToString().Split(" ");
                     switch (e.KeyEvent.Key)
                     {
                         case (Key.CursorUp):
-                            if (sessionHistory.Count != 0)
+                            if (YAMLModelControls.sessionHistory.Count != 0)
                             {
-                                if (sessionHistoryIndex != 0)
+                                if (YAMLModelControls.sessionHistoryIndex != 0)
                                 {
-                                    sessionHistoryIndex--;
+                                    YAMLModelControls.sessionHistoryIndex--;
                                 }
                                 else
                                 {
-                                    sessionHistoryIndex = sessionHistory.Count - 1;
+                                    YAMLModelControls.sessionHistoryIndex = YAMLModelControls.sessionHistory.Count - 1;
                                 }
-                                commandPromptTextField.Text = sessionHistory[sessionHistoryIndex];
-                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                                YAMLModelControls.commandPromptTextField.Text = YAMLModelControls.sessionHistory[YAMLModelControls.sessionHistoryIndex];
+                                YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                             }
                             break;
                         case (Key.CursorDown):
-                            if (sessionHistory.Count != 0)
+                            if (YAMLModelControls.sessionHistory.Count != 0)
                             {
-                                if (sessionHistoryIndex < (sessionHistory.Count - 1))
+                                if (YAMLModelControls.sessionHistoryIndex < (YAMLModelControls.sessionHistory.Count - 1))
                                 {
-                                    sessionHistoryIndex++;
+                                    YAMLModelControls.sessionHistoryIndex++;
                                 }
                                 else
                                 {
-                                    sessionHistoryIndex = sessionHistory.Count == 0 ? (sessionHistory.Count - 1) : 0;
+                                    YAMLModelControls.sessionHistoryIndex = YAMLModelControls.sessionHistory.Count == 0 ? (YAMLModelControls.sessionHistory.Count - 1) : 0;
                                 }
-                                commandPromptTextField.Text = sessionHistory[sessionHistoryIndex];
-                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                                YAMLModelControls.commandPromptTextField.Text = YAMLModelControls.sessionHistory[YAMLModelControls.sessionHistoryIndex];
+                                YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                             }
 
                             break;
                         case (Key.CtrlMask | Key.A):
-                            currentavailableListUpDown = true;
-                            if (availableKindsListView.SelectedItem > 0)
+                            GlobalVariables.currentavailableListUpDown = true;
+                            if (YAMLModelControls.availableKindsListView.SelectedItem > 0)
                             {
-                                availableKindsListView.SelectedItem = availableKindsListView.SelectedItem - 1;
-                                availableKindsListView.TopItem = availableKindsListView.SelectedItem;
-                                commandPromptTextField.Text = currentAvailableOptions[availableKindsListView.SelectedItem].name;
-                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
-                                UpdateDescriptionView(commandPromptTextField.Text.ToString());
+
+                                YAMLModelControls.availableKindsListView.SelectedItem = YAMLModelControls.availableKindsListView.SelectedItem - 1;
+                                YAMLModelControls.availableKindsListView.TopItem = YAMLModelControls.availableKindsListView.SelectedItem;
+                                YAMLModelControls.commandPromptTextField.Text = args[0] == "new" ? $"{args[0]} {currentAvailableOptions[YAMLModelControls.availableKindsListView.SelectedItem].name}" : currentAvailableOptions[YAMLModelControls.availableKindsListView.SelectedItem].name;
+                                YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
+                                UpdateDescriptionView(YAMLModelControls.commandPromptTextField.Text.ToString());
                             }
-                            commandPromptTextField.SetFocus();
+                            YAMLModelControls.commandPromptTextField.SetFocus();
                             break;
                         case (Key.CtrlMask | Key.Z):
-                            currentavailableListUpDown = true;
-                            if (availableKindsListView.SelectedItem < availableKindsListView.Source.ToList().Count - 1)
+                            GlobalVariables.currentavailableListUpDown = true;
+                            if (YAMLModelControls.availableKindsListView.SelectedItem < YAMLModelControls.availableKindsListView.Source.ToList().Count - 1)
                             {
-                                availableKindsListView.SelectedItem = availableKindsListView.SelectedItem + 1;
-                                availableKindsListView.TopItem = availableKindsListView.SelectedItem;
-                                commandPromptTextField.Text = currentAvailableOptions[availableKindsListView.SelectedItem].name;
-                                commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
-                                UpdateDescriptionView(commandPromptTextField.Text.ToString());
+                                YAMLModelControls.availableKindsListView.SelectedItem = YAMLModelControls.availableKindsListView.SelectedItem + 1;
+                                YAMLModelControls.availableKindsListView.TopItem = YAMLModelControls.availableKindsListView.SelectedItem;
+                                YAMLModelControls.commandPromptTextField.Text = args[0] == "new" ? $"{args[0]} {currentAvailableOptions[YAMLModelControls.availableKindsListView.SelectedItem].name}" : currentAvailableOptions[YAMLModelControls.availableKindsListView.SelectedItem].name;
+                                YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
+                                UpdateDescriptionView(YAMLModelControls.commandPromptTextField.Text.ToString());
                             }
-                            commandPromptTextField.SetFocus();
+                            YAMLModelControls.commandPromptTextField.SetFocus();
                             break;
                         default:
 
@@ -86,104 +89,99 @@ namespace k8config
                     }
                     if (String.IsNullOrWhiteSpace(currentInputText))
                     {
-                        autoCompleteInterruptText = "";
-
+                        GlobalVariables.autoCompleteInterruptText = "";
                     }
                 }
-
             };
-            commandPromptTextField.KeyPress += (e) =>
+            YAMLModelControls.commandPromptTextField.KeyPress += (e) =>
             {
-                string currentInputText = commandPromptTextField.Text.ToString();
+                string currentInputText = YAMLModelControls.commandPromptTextField.Text.ToString();
                 string[] args = currentInputText.Trim().Split();
                 List<string> validCompleteCommands = new List<string>() { "no" };
                 if (e.KeyEvent.Key == Key.Tab && !string.IsNullOrEmpty(currentInputText))
                 {
-                    currentavailableListUpDown = false;
+                    GlobalVariables.currentavailableListUpDown = false;
                     List<string> possibleOptions = new List<string>();
 
-                    if (GlobalVariables.promptArray.Count() == 1 && args.Count() > 1)
+                    if (YAMLModePromptObject.CurrentPromptPositionIsRoot && args.Count() > 1)
                     {
-                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1];
-                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
-                        availableKindsListView.SetSource(possibleOptions.ToList());
-                        commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(possibleOptions)}";
-                        commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                        if (String.IsNullOrEmpty(GlobalVariables.autoCompleteInterruptText)) GlobalVariables.autoCompleteInterruptText = args[1];
+                        possibleOptions = retrieveAvailableOptions(true, false, GlobalVariables.autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(GlobalVariables.autoCompleteInterruptText)).Select(x => x.name).ToList();
+                        YAMLModelControls.availableKindsListView.SetSource(possibleOptions.ToList());
+                        YAMLModelControls.commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(possibleOptions)}";
+                        YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                     }
                     else if (args.Count() == 1 && args[0] != "")
                     {
-                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[0].Trim();
-                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
-                        availableKindsListView.SetSource(possibleOptions.ToList());
-                        commandPromptTextField.Text = $"{NextAutoComplete(possibleOptions)}";
-                        commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                        if (String.IsNullOrEmpty(GlobalVariables.autoCompleteInterruptText)) GlobalVariables.autoCompleteInterruptText = args[0].Trim();
+                        possibleOptions = retrieveAvailableOptions(true, false, GlobalVariables.autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(GlobalVariables.autoCompleteInterruptText)).Select(x => x.name).ToList();
+                        YAMLModelControls.availableKindsListView.SetSource(possibleOptions.ToList());
+                        YAMLModelControls.commandPromptTextField.Text = $"{NextAutoComplete(possibleOptions)}";
+                        YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                     }
                     else if (args.Count() == 2 && args[1] != "" && validCompleteCommands.Exists(x => x == args[0]))
                     {
-                        if (String.IsNullOrEmpty(autoCompleteInterruptText)) autoCompleteInterruptText = args[1].Trim();
-                        possibleOptions = retrieveAvailableOptions(true, false, autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(autoCompleteInterruptText)).Select(x => x.name).ToList();
-                        availableKindsListView.SetSource(possibleOptions.ToList());
-                        commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(possibleOptions)}";
-                        commandPromptTextField.CursorPosition = commandPromptTextField.Text.Length;
+                        if (String.IsNullOrEmpty(GlobalVariables.autoCompleteInterruptText)) GlobalVariables.autoCompleteInterruptText = args[1].Trim();
+                        possibleOptions = retrieveAvailableOptions(true, false, GlobalVariables.autoCompleteInterruptText).Item2.Where(x => x.name.StartsWith(GlobalVariables.autoCompleteInterruptText)).Select(x => x.name).ToList();
+                        YAMLModelControls.availableKindsListView.SetSource(possibleOptions.ToList());
+                        YAMLModelControls.commandPromptTextField.Text = $"{args[0]} {NextAutoComplete(possibleOptions)}";
+                        YAMLModelControls.commandPromptTextField.CursorPosition = YAMLModelControls.commandPromptTextField.Text.Length;
                     }
                     else
                     {
-                        autoCompleteInterruptText = "";
-                        possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x => x.TableView()).ToList();
-                        availableKindsListView.SetSource(possibleOptions.ToList());
+                        GlobalVariables.autoCompleteInterruptText = "";
+                        possibleOptions = retrieveAvailableOptions(false).Item2.ToList().Select(x => x.TableView).ToList();
+                        YAMLModelControls.availableKindsListView.SetSource(possibleOptions.ToList());
 
                     }
                     e.Handled = true;
                 }
                 else
                 {
-                    autoCompleteInterruptText = "";
-
+                    GlobalVariables.autoCompleteInterruptText = "";
                 }
-
             };
-            commandPromptTextField.KeyUp += (e) =>
+            YAMLModelControls.commandPromptTextField.KeyUp += (e) =>
             {
                 List<string> allowedDescriptionCommands = new List<string>() { "new", "no" };
-                string currentInputText = commandPromptTextField.Text.ToString();
+                string currentInputText = YAMLModelControls.commandPromptTextField.Text.ToString();
                 string[] args = currentInputText.Trim().Split();
                 if (e.KeyEvent.Key == Key.Enter)
                 {
                     UpdateMessageBar("");
                     if (!string.IsNullOrEmpty(currentInputText))
                     {
-                        if (sessionHistory.Count == 0)
+                        if (YAMLModelControls.sessionHistory.Count == 0)
                         {
-                            sessionHistory.Add(currentInputText);
+                            YAMLModelControls.sessionHistory.Add(currentInputText);
                         }
-                        else if (sessionHistory.Last() != currentInputText)
+                        else if (YAMLModelControls.sessionHistory.Last() != currentInputText)
                         {
-                            sessionHistory.Add(currentInputText);
+                            YAMLModelControls.sessionHistory.Add(currentInputText);
                         }
-                        currentavailableListUpDown = false;
-                        if (currentInputText == "..")
+                        GlobalVariables.currentavailableListUpDown = false;
+                        if (currentInputText.Contains(".."))
                         {
-                            if (GlobalVariables.promptArray.Count() > 1)
+                            if (YAMLModePromptObject.CurrentPromptPositionIsNotRoot)
                             {
-                                GlobalVariables.promptArray.RemoveAt(GlobalVariables.promptArray.Count - 1);
-
+                                YAMLModePromptObject.ExitMultipleFolders(currentInputText);
                                 repositionCommandInput();
                                 paintYAML();
                             }
                         }
                         else if (currentInputText == "/")
                         {
-                            if (GlobalVariables.promptArray.Count() > 1)
+                            if (YAMLModePromptObject.CurrentPromptPositionIsNotRoot)
                             {
-                                GlobalVariables.promptArray = new List<string>() { "yaml" };
+                                YAMLModePromptObject.Init();
                                 repositionCommandInput();
                                 paintYAML();
                             }
                         }
                         else if (GlobalVariables.sessionDefinedKinds.Count() > 0 && currentInputText == "list")
                         {
-                            List<String> outputList = new List<string>();
-                            if (GlobalVariables.promptArray.Count() == 1)
+                            List<string> outputList = new List<string>();
+                            if (YAMLModePromptObject.CurrentPromptPositionIsRoot)
                             {
 
                                 GlobalVariables.sessionDefinedKinds.ForEach(x =>
@@ -202,7 +200,7 @@ namespace k8config
                             {
                                 UpdateMessageBar("The current object is not a list");
                             }
-                            definedYAMLListView.SetSourceAsync(outputList);
+                            YAMLModelControls.definedYAMLListView.SetSourceAsync(outputList);
                         }
                         else if (currentInputText == "new")
                         {
@@ -221,13 +219,17 @@ namespace k8config
                                     {
                                         currentObject.GetType().GetMethod("Add").Invoke(currentObject, new[] { Activator.CreateInstance(selectListTypes[0]) });
                                     }
-                                    UpdateMessageBar($"{selectListTypes[0].Name.Replace("V1", "")} added to {GlobalVariables.promptArray.Last()}");
+                                    UpdateMessageBar($"{selectListTypes[0].Name.Replace("V1", "")} added to {YAMLModePromptObject.Last}");
                                     AddToPrompt(KubeObject.GetNestedList(currentObject).Last().index.ToString());
                                 }
                                 repositionCommandInput();
                                 paintYAML();
                             }
 
+                        }
+                        else if (YAMLModePromptObject.CurrentPromptPositionIsRoot && currentInputText == "exit")
+                        {
+                            Environment.Exit(0);
                         }
                         else
                         {
@@ -246,6 +248,7 @@ namespace k8config
                                         }
                                         catch (Exception ex)
                                         {
+                                            GlobalVariables.Log.Error(ex, $"Error loading YAML file {args[1]}");
                                             UpdateMessageBar($"Error loading YAML file {args[1]} - {ex.Message}");
                                         }
                                     }
@@ -259,22 +262,24 @@ namespace k8config
                                     }
                                     catch (Exception ex)
                                     {
+                                        GlobalVariables.Log.Error(ex, $"Error writing YAML file {args[1]}");
                                         UpdateMessageBar($"Error writing YAML to file {args[1]} - {ex.Message}");
                                     }
                                 }
 
                                 else if (args[0] == "new")
                                 {
-                                    if (GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
+                                    if (GlobalVariables.availableKubeTypes.Exists(x => x.classKind == args[1]))
                                     {
-                                        if (GlobalVariables.promptArray.Count == 1)
+                                        if (YAMLModePromptObject.CurrentPromptPositionIsRoot)
                                         {
-                                            var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]);
-                                            Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.kind == args[1]).assemblyFullName);
+                                            var kubeObject = GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.classKind == args[1]);
+                                            Type currentType = Type.GetType(GlobalVariables.availableKubeTypes.FirstOrDefault(x => x.classKind == args[1]).assemblyFullName);
                                             object _object = Activator.CreateInstance(currentType);
                                             _object.SetObjectPropertyValue("kind", kubeObject.kind);
                                             string apiVersion = (string.IsNullOrWhiteSpace(kubeObject.group) ? kubeObject.version : $"{kubeObject.group}/{kubeObject.version}");
                                             _object.SetObjectPropertyValue("apiversion", apiVersion);
+                                            _object.SetObjectPropertyValue("metadata", new V1ObjectMeta() {  Name = $"new{kubeObject.kind}" });
                                             SessionDefinedKind newSessionKind = new SessionDefinedKind()
                                             {
                                                 index = GlobalVariables.sessionDefinedKinds.Count() == 0 ? 1 : GlobalVariables.sessionDefinedKinds.Last().index + 1,
@@ -321,7 +326,7 @@ namespace k8config
                                     int index = 0;
                                     if (int.TryParse(args[1], out index))
                                     {
-                                        if (KubeObject.IsCurrentObjectRoot())
+                                        if (YAMLModePromptObject.CurrentPromptPositionIsRoot)
                                         {
                                             if (KubeObject.DoesRootIndexExist(index))
                                             {
@@ -358,7 +363,7 @@ namespace k8config
                                     int index = 0;
                                     if (int.TryParse(args[1], out index))
                                     {
-                                        if (GlobalVariables.promptArray.Count() == 1 && GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
+                                        if (YAMLModePromptObject.CurrentPromptPositionIsRoot && GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
                                         {
                                             GlobalVariables.sessionDefinedKinds.Remove(GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == index));
                                             UpdateMessageBar("Definition deleted");
@@ -378,10 +383,10 @@ namespace k8config
                                     else
                                     {
                                         object currentKubeObject = KubeObject.GetCurrentObject();
-                                        PropertyInfo propertyInfo = currentKubeObject.GetJsonProperty(args[1]);
+                                        PropertyInfo propertyInfo = currentKubeObject.GetJsonPropertyInfo(args[1]);
                                         if (propertyInfo != null)
                                         {
-                                            UpdateMessageBar($"Cleared {args[1]} value");
+                                            UpdateMessageBar($"\"{args[1]}\" attribute removed");
                                             try
                                             {
                                                 if (propertyInfo.GetValue(currentKubeObject) != null)
@@ -395,6 +400,7 @@ namespace k8config
                                             }
                                             catch (Exception ex)
                                             {
+                                                GlobalVariables.Log.Error(ex, "Cannot clear attribute value");
                                                 UpdateMessageBar($"Cannot clear attribute value: {ex.Message}");
                                             }
                                             paintYAML();
@@ -414,13 +420,17 @@ namespace k8config
                                         UpdateDescriptionView(args[0].ToLower());
 
                                         OptionsSlimType currentSlimKubeObject = retrieveAvailableOptions(false, false).Item2.FirstOrDefault(x => x.name == args[0] && !x.propertyIsList);
-                                        var propertyInfo = currentKubeObject.GetJsonProperty(args[0]);
+                                        var propertyInfo = currentKubeObject.GetJsonPropertyInfo(args[0]);
                                         Type propertyType = (propertyInfo.PropertyType.Name == typeof(Nullable<>).Name ? Nullable.GetUnderlyingType(propertyInfo.PropertyType) : propertyInfo.PropertyType);
                                         try
                                         {
                                             if (propertyType.Name == "Int64" || propertyType.Name == "Int32" || propertyType.Name == "String" || propertyType.Name == "Boolean")
                                             {
                                                 propertyInfo.SetValue(currentKubeObject, args[1].CastToReflected(propertyType));
+                                            }
+                                            else if (propertyType.Name == "IntstrIntOrString")
+                                            {
+                                                propertyInfo.SetValue(currentKubeObject, Activator.CreateInstance(typeof(IntstrIntOrString), args[1]));
                                             }
                                             else if (currentSlimKubeObject.propertyIsArray)
                                             {
@@ -462,19 +472,19 @@ namespace k8config
                                             }
                                             else
                                             {
-
                                                 UpdateMessageBar($"Don't know how to cast value {args[1]} to type {propertyType.Name}");
-
                                             }
                                         }
                                         catch (Exception ex)
                                         {
                                             if (ex.InnerException != null)
                                             {
+                                                GlobalVariables.Log.Error(ex.InnerException, $"{args[1]} cannot be casted");
                                                 UpdateMessageBar($"{args[1]} cannot be casted ({ex.InnerException.Message})");
                                             }
                                             else
                                             {
+                                                GlobalVariables.Log.Error(ex, $"{args[1]} cannot be casted");
                                                 UpdateMessageBar($"{args[1]} cannot be casted ({ex.Message})");
                                             }
                                         }
@@ -488,33 +498,33 @@ namespace k8config
                             }
                             else
                             {
-                                if (retrieveAvailableOptions(false, false).Item2.Exists(x => x.name == currentInputText))
+                                object currentPromptObject = KubeObject.GetCurrentObject();
+                                if (currentPromptObject.GetJsonObjectPropertyValueExists(currentInputText))
                                 {
-                                    object tmpObject = KubeObject.GetCurrentObject();
                                     UpdateDescriptionView(currentInputText);
-                                    OptionsSlimType currentKubeObject = tmpObject.RetrieveAttributeValue(currentInputText.ToLower());
+                                    OptionsSlimType currentKubeObject = currentPromptObject.RetrieveAttributeValue(currentInputText);
                                     if (currentKubeObject != null)
                                     {
-                                        var currentProperty = tmpObject.GetJsonProperty(currentInputText);
+                                        var currentProperty = currentPromptObject.GetJsonPropertyInfo(currentInputText);
                                         Type currentObjectType = Nullable.GetUnderlyingType(currentProperty.PropertyType) != null ? Nullable.GetUnderlyingType(currentProperty.PropertyType) : currentProperty.PropertyType;
                                         if (currentObjectType.IsPrimitive || (currentObjectType == typeof(String)) || currentKubeObject.propertyIsArray || currentKubeObject.propertyIsDictionary)
                                         {
-                                            UpdateMessageBar($"({currentInputText}) requires a value of type \"{currentKubeObject.displayType}\"");
+                                            UpdateMessageBar($"{currentInputText} requires a value of type \"{currentKubeObject.displayType}\"");
                                         }
                                         else
                                         {
-                                            if (tmpObject.GetObjectPropertyValue(currentProperty.Name) == null)
+                                            if (currentPromptObject.GetJsonObjectPropertyValue(currentInputText) == null)
                                             {
                                                 if (currentProperty.PropertyType.IsGenericType)
                                                 {
                                                     if (currentProperty.PropertyType.GetGenericTypeDefinition() == typeof(IList<>))
                                                     {
-                                                        tmpObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(typeof(List<>).MakeGenericType(currentProperty.PropertyType.GetGenericArguments()[0])));
+                                                        currentPromptObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(typeof(List<>).MakeGenericType(currentProperty.PropertyType.GetGenericArguments()[0])));
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    tmpObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(currentProperty.PropertyType));
+                                                    currentPromptObject.SetObjectPropertyValue(currentInputText, Activator.CreateInstance(currentProperty.PropertyType));
                                                 }
 
                                             }
@@ -531,18 +541,18 @@ namespace k8config
                                 }
                             }
                         }
-                        commandPromptTextField.Text = "";
-                        autoCompleteInterruptText = "";
+                        YAMLModelControls.commandPromptTextField.Text = "";
                     }
+                    GlobalVariables.autoCompleteInterruptText = "";
                 }
                 updateAvailableKindsList();
-                currentInputText = commandPromptTextField.Text.ToString();
+                currentInputText = YAMLModelControls.commandPromptTextField.Text.ToString();
                 args = currentInputText.Trim().Split();
-                if (KubeObject.GetCurrentObject().JsonPropertyExists(args[0].ToLower()))
+                if (KubeObject.GetCurrentObject().JsonPropertyExists(args[0]))
                 {
                     UpdateDescriptionView(args[0]);
                 }
-                else if (args.Length == 2 && args[0] == "new" && GlobalVariables.availableKubeTypes.Exists(x => x.kind == args[1]))
+                else if (args.Length == 2 && args[0] == "new" && GlobalVariables.availableKubeTypes.Exists(x => x.classKind == args[1]))
                 {
                     UpdateDescriptionView(args[1]);
                 }

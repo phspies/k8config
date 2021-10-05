@@ -1,8 +1,7 @@
 ﻿using k8config.DataModels;
-using k8s;
+using k8config.GUIEvents;
+using k8config.GUIEvents.YAMLMode;
 using k8s.Models;
-using Org.BouncyCastle.Utilities.Collections;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,36 +12,33 @@ namespace k8config
         static void paintYAML()
         {
             List<string> yamlList = new List<string>();
-            definedYAMLWindow.Text = "";
-            if (GlobalVariables.promptArray.Count() > 1)
+            YAMLModelControls.definedYAMLWindow.Text = "";
+            if (YAMLModePromptObject.CurrentPromptPositionIsNotRoot)
             {
-                object currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
-                yamlList = Yaml.YAMLSerializer.Serialize(currentSelectedKind).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
-                if (string.IsNullOrWhiteSpace(yamlList.Last()))
-                {
-                    yamlList.Remove(yamlList.Last());
-                }
-                definedYAMLListView.SetSource(yamlList);
-                var currentObject = (IKubernetesObject<V1ObjectMeta>)GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
-                definedYAMLWindow.Title = string.IsNullOrWhiteSpace(currentObject?.Metadata?.Name) ? $"{currentObject.Kind} YAML" : $"{currentObject.Name()} ({currentObject.Kind}) YAML";
+                object currentSelectedKind = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(YAMLModePromptObject.GetFolderAt(1))).KubeObject;
+                yamlList = YAMLOperations.SerializeObjectToList(currentSelectedKind);
+                YAMLModelControls.definedYAMLListView.SetSource(yamlList);
+                var kubeObject = GlobalVariables.sessionDefinedKinds.Find(x => x.index == int.Parse(YAMLModePromptObject.GetFolderAt(1)));
+                YAMLModelControls.definedYAMLWindow.Title = $"{kubeObject.metaData.Name()} ({kubeObject.metaData.Kind}) YAML";
             }
             else
             {
-                definedYAMLListView.SetSourceAsync(new List<string>());
+                YAMLModelControls.definedYAMLListView.SetSource(new List<string>() { "No definition defined" });
+                YAMLModelControls.definedYAMLWindow.Title = "";
             }
 
             //move select  bar to current selected prompt object 
-            if (GlobalVariables.promptArray.Count > 2)
+            if (YAMLModePromptObject.CurrentPromptPositionIsNotRoot)
             {
-                string startObject = yamlList.Find(x => x.Contains(GlobalVariables.promptArray[2]));
+                string startObject = yamlList.Find(x => x.Contains(YAMLModePromptObject.GetFolderAt(2)));
                 int currentIndex = yamlList.IndexOf(startObject) < 1 ? 1 : yamlList.IndexOf(startObject);
                 string[] yamlArray = yamlList.ToArray();
                 List<int> indexArray = new List<int>();
                 currentIndex--;
-                for (int x = 2; x < (GlobalVariables.promptArray.Count); x++)
+                for (int x = 2; x < YAMLModePromptObject.Count; x++)
                 {
                     int subindex;
-                    if (int.TryParse(GlobalVariables.promptArray[x], out subindex))
+                    if (int.TryParse(YAMLModePromptObject.GetFolderAt(x), out subindex))
                     {
                         indexArray.Add(subindex);
                         continue;
@@ -57,17 +53,17 @@ namespace k8config
                             while (true)
                             {
                                 currentIndex += 1;
-                                if (currentIndex > yamlArray.Length-1)
+                                if (currentIndex > yamlArray.Length - 1)
                                 {
                                     currentIndex = fallbackIndex;
                                     break;
                                 }
-                                if (x == 2 && yamlArray[currentIndex].ToLower().StartsWith($"{GlobalVariables.promptArray[x].ToLower()}:"))
+                                if (x == 2 && yamlArray[currentIndex].ToLower().StartsWith($"{YAMLModePromptObject.GetFolderAt(x).ToLower()}:"))
                                 {
                                     fallbackIndex = currentIndex;
                                     break;
                                 }
-                                else if (x != 2 && yamlArray[currentIndex].ToLower().Contains(GlobalVariables.promptArray[x].ToLower()))
+                                else if (x != 2 && yamlArray[currentIndex].ToLower().Contains(YAMLModePromptObject.GetFolderAt(x).ToLower()))
                                 {
                                     fallbackIndex = currentIndex;
                                     break;
@@ -75,16 +71,8 @@ namespace k8config
                             }
                         }
                     }
-                    definedYAMLListView.SelectedItem = currentIndex;
-                    if (currentIndex < 8)
-                    {
-                        definedYAMLListView.TopItem = 0;
-                    }
-                    else
-                    {
-                        definedYAMLListView.TopItem = currentIndex - 5;
-                    }
-
+                    YAMLModelControls.definedYAMLListView.SelectedItem = currentIndex;
+                    YAMLModelControls.definedYAMLListView.TopItem = currentIndex < 8 ? 0 : currentIndex - 5;
                     if (currentIndex == yamlArray.Length)
                     {
                         break;

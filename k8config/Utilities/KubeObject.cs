@@ -1,4 +1,5 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,10 +9,7 @@ namespace k8config.Utilities
 {
     static class KubeObject
     {
-        public static bool IsCurrentObjectRoot()
-        {
-            return GlobalVariables.promptArray.Count() == 1 ? true : false;
-        }
+
         public static bool DoesRootIndexExist(int _index)
         {
             return GlobalVariables.sessionDefinedKinds.Exists(x => x.index == _index);
@@ -50,13 +48,13 @@ namespace k8config.Utilities
         public static object GetCurrentObject()
         {
             object returnObject = new object();
-            if (GlobalVariables.promptArray.Count() > 1)
+            if (YAMLModePromptObject.CurrentPromptPositionIsNotRoot)
             {
-                returnObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(GlobalVariables.promptArray[1])).KubeObject;
-                for (int pointer = 1; GlobalVariables.promptArray.ToArray().Length > pointer; pointer++)
+                returnObject = GlobalVariables.sessionDefinedKinds.FirstOrDefault(x => x.index == int.Parse(YAMLModePromptObject.GetFolderAt(1))).KubeObject;
+                for (int pointer = 1; YAMLModePromptObject.Count > pointer; pointer++)
                 {
                     int index = 0;
-                    string pointerPromptValue = GlobalVariables.promptArray[pointer];
+                    string pointerPromptValue = YAMLModePromptObject.GetFolderAt(pointer);
                     if (int.TryParse(pointerPromptValue, out index))
                     {
                         if (pointer == 1 && GlobalVariables.sessionDefinedKinds.Exists(x => x.index == index))
@@ -73,10 +71,10 @@ namespace k8config.Utilities
                     }
                     else
                     {
-                        var currentObject = returnObject.GetJsonProperty(pointerPromptValue);
+                        var currentObject = returnObject.GetJsonObjectPropertyValue(pointerPromptValue);
                         if (returnObject.GetJsonObjectPropertyValueIsNotNull(pointerPromptValue))
                         {
-                            Type[] selectListTypes = returnObject.GetObjectGenericArguments(currentObject.Name);
+                            Type[] selectListTypes = returnObject.GetObjectGenericArguments(pointerPromptValue);
                             if (selectListTypes.Length == 1)
                             {
                                 if (selectListTypes[0].Name == "String")

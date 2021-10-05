@@ -15,60 +15,59 @@ namespace k8config
 {
     partial class Program
     {
-        static void ApplyDefinitions()
+        public static void ApplyDefinitions()
         {
-            applyStatusList.Clear();
-            ApplyStatusWindow.Visible = true;
-            closeApplyWindowButton.SetFocus();
+            RealtimeModeControls.applyStatusList.Clear();
+            RealtimeModeControls.ApplyStatusWindow.Visible = true;
+            RealtimeModeControls.closeApplyWindowButton.SetFocus();
             GlobalVariables.sessionDefinedKinds.ForEach(definition =>
                 {
 
-                    var kubeObject = (definition.KubeObject as IKubernetesObject<V1ObjectMeta>);
                     try
                     {
                         string currentNamespace = "default";
                         Application.MainLoop.Invoke(() =>
                         {
-                            applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff",CultureInfo.InvariantCulture)}: Checking if {kubeObject.Name()} exists in namespace {currentNamespace}");
-                            applyListView.SetNeedsDisplay();
+                            RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff",CultureInfo.InvariantCulture)}: Checking if {definition.metaData.Name()} exists in namespace {currentNamespace}");
+                            RealtimeModeControls.applyListView.SetNeedsDisplay();
                         });
-                        if (CheckIfExist(kubeObject, currentNamespace))
+                        if (CheckIfExist(definition.metaData, currentNamespace))
                         {
                             Application.MainLoop.Invoke(() =>
                             {
-                                applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: {kubeObject.Name()} exists in namespace {currentNamespace}, running a patch operation");
-                                applyListView.SetNeedsDisplay();
+                                RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: {definition.metaData.Name()} exists in namespace {currentNamespace}, running a patch operation");
+                                RealtimeModeControls.applyListView.SetNeedsDisplay();
                             });
 
-                            HttpOperationResponse patchResponse = PatchIfExist(kubeObject, currentNamespace);
+                            HttpOperationResponse patchResponse = PatchIfExist(definition.metaData, currentNamespace);
                             Application.MainLoop.Invoke(() =>
                             {
-                                applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Patch operation for {kubeObject.Name()} returned {patchResponse.Response.StatusCode} : {patchResponse.Response.ReasonPhrase}");
-                                applyListView.SetNeedsDisplay();
+                                RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Patch operation for {definition.metaData.Name()} returned {patchResponse.Response.StatusCode} : {patchResponse.Response.ReasonPhrase}");
+                                RealtimeModeControls.applyListView.SetNeedsDisplay();
                             });
                         }
                         else
                         {
                             Application.MainLoop.Invoke(() =>
                             {
-                                applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: {kubeObject.Name()} does not exist in namespace {currentNamespace}, running a create operation");
-                                applyListView.SetNeedsDisplay();
+                                RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: {definition.metaData.Name()} does not exist in namespace {currentNamespace}, running a create operation");
+                                RealtimeModeControls.applyListView.SetNeedsDisplay();
                             });
-                            HttpOperationResponse createResponse = Create(kubeObject, currentNamespace);
+                            HttpOperationResponse createResponse = Create(definition.metaData, currentNamespace);
                             Application.MainLoop.Invoke(() =>
                             {
-                                applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Patch operation for {kubeObject.Name()} returned {createResponse.Response.StatusCode} : {createResponse.Response.ReasonPhrase}");
-                                applyListView.SetNeedsDisplay();
+                                RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Patch operation for {definition.metaData.Name()} returned {createResponse.Response.StatusCode} : {createResponse.Response.ReasonPhrase}");
+                                RealtimeModeControls.applyListView.SetNeedsDisplay();
                             });
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Cannot apply definition to context: {ex.Message}");
+                        GlobalVariables.Log.Error($"Cannot apply definition to context: {ex.Message}");
                         Application.MainLoop.Invoke(() =>
                         {
-                            applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Operation for {kubeObject.Name()} threw an exception {ex.Message}");
-                            applyListView.SetNeedsDisplay();
+                            RealtimeModeControls.applyStatusList.Insert(0, $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture)}: Operation for {definition.metaData.Name()} threw an exception {ex.Message}");
+                            RealtimeModeControls.applyListView.SetNeedsDisplay();
                         });
                     }
                 });

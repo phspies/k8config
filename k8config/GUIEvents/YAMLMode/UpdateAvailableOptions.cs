@@ -1,8 +1,8 @@
 ﻿using k8config.DataModels;
+using k8config.GUIEvents;
 using k8config.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace k8config
 {
@@ -10,18 +10,18 @@ namespace k8config
     {
         public static void UpdateAvailableOptions()
         {
-            List<String> outputList = new List<string>();
-            if (GlobalVariables.promptArray.Count() == 1)
+            List<string> outputList = new List<string>();
+            if (YAMLModePromptObject.CurrentPromptPositionIsRoot)
             { 
                 GlobalVariables.sessionDefinedKinds.ForEach(x =>
                 {
                     if (x.KubeObject.GetNestedPropertyValue("Metadata.Name") != null)
                     {
-                        outputList.Add($"[{x.index}] {x.KubeObject.GetNestedPropertyValue("Metadata.Name")} ({x.kind})");
+                        outputList.Add($"[{x.index}] {x.KubeObject.GetNestedPropertyValue("Metadata.Name")} ({x.displayKind})");
                     }
                     else if (x.KubeObject.GetDataNamePropValue("Name") != null)
                     {
-                        outputList.Add($"[{x.index}] {x.KubeObject.GetDataNamePropValue("Name")} ({x.kind})");
+                        outputList.Add($"[{x.index}] {x.KubeObject.GetDataNamePropValue("Name")} ({x.displayKind})");
                     }
                     else
                     {
@@ -35,24 +35,24 @@ namespace k8config
                 {
                     if (!String.IsNullOrWhiteSpace(x.name))
                     {
-                        outputList.Add($"[{x.index}] {x.name} ({x.displayType})");
+                        outputList.Add($"[{x.index}] {x.name} ({x.sanatizedDisplayType})");
                     }
                     else
                     {
-                        outputList.Add($"[{x.index}] {x.displayType}");
+                        outputList.Add($"[{x.index}] {x.sanatizedDisplayType}");
                     }
                 });
             }
             if (outputList.Count == 0)
             {
                 outputList.Add("empty");
-                definedYAMLWindow.Title = "No objects available to choose from";
+                YAMLModelControls.definedYAMLWindow.Title = "No objects available to choose from";
             }
             else
             {
-                definedYAMLWindow.Title = "Available objects to choose from";
-            }    
-            definedYAMLListView.SetSourceAsync(outputList);
+                YAMLModelControls.definedYAMLWindow.Title = "Available objects to choose from";
+            }
+            YAMLModelControls.definedYAMLListView.SetSourceAsync(outputList);
             
         }
     }

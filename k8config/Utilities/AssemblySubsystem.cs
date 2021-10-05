@@ -1,4 +1,6 @@
 ﻿using k8config.DataModels;
+using k8s;
+using k8s.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,28 +12,24 @@ namespace k8config.Utilities
     {
         public static void BuildAvailableAssemblyList()
         {
+            List<GlobalAssemblyKubeType> tmpList = new List<GlobalAssemblyKubeType>();
             NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
             Log.Debug($"Loading Kubernetes models");
             try
             {
-                foreach (var assembly in GetAvailableAssemblyList())
+                foreach (var assembly in GetAvailableAssemblyList().DistinctBy(x => x.Name))
                 {
-                    if (assembly?.CustomAttributes.Count() > 0)
+                    if (typeof(IKubernetesObject<V1ObjectMeta>).IsAssignableFrom(Type.GetType(assembly.AssemblyQualifiedName)) && (assembly?.CustomAttributes.Count() > 0) && assembly?.CustomAttributes?.First()?.NamedArguments.Count() > 0)
                     {
-                        if (assembly?.CustomAttributes?.First()?.NamedArguments.Count() > 0)
+                        var namedArgs = assembly.CustomAttributes.First().NamedArguments;
+                        tmpList.Add(new GlobalAssemblyKubeType()
                         {
-                            var namedArgs = assembly.CustomAttributes.First().NamedArguments;
-                            if (namedArgs.Any(x => (new List<string>() { "ApiVersion", "Group", "Kind" }).Contains(x.MemberName)))
-                            {
-                                GlobalVariables.availableKubeTypes.Add(new GlobalAssemblyKubeType()
-                                {
-                                    kind = namedArgs.FirstOrDefault(x => x.MemberName == "Kind").TypedValue.Value.ToString(),
-                                    version = namedArgs.FirstOrDefault(x => x.MemberName == "ApiVersion").TypedValue.Value.ToString(),
-                                    group = namedArgs.FirstOrDefault(x => x.MemberName == "Group").TypedValue.Value.ToString(),
-                                    assemblyFullName = assembly.AssemblyQualifiedName
-                                });
-                            }
-                        }
+                            classKind = assembly.Name.Replace("V1", ""),
+                            kind = namedArgs.FirstOrDefault(x => x.MemberName == "Kind").TypedValue.Value.ToString(),
+                            version = namedArgs.FirstOrDefault(x => x.MemberName == "ApiVersion").TypedValue.Value.ToString(),
+                            group = namedArgs.FirstOrDefault(x => x.MemberName == "Group").TypedValue.Value.ToString(),
+                            assemblyFullName = assembly.AssemblyQualifiedName
+                        });
                     }
                 };
             }
@@ -40,6 +38,7 @@ namespace k8config.Utilities
                 Log.Error($"Error loading Kubernetes models: {ex.Message}");
             }
             Log.Debug($"Done loading Kubernetes models, {GlobalVariables.availableKubeTypes.Count} found!");
+            GlobalVariables.availableKubeTypes = new List<GlobalAssemblyKubeType>(tmpList.OrderBy(x => x.classKind));
         }
         public static IEnumerable<Type> GetAvailableAssemblyList()
         {

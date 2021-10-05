@@ -1,4 +1,5 @@
-﻿using k8s;
+﻿using k8config.DataModels;
+using k8s;
 using k8s.Models;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,14 @@ namespace k8config
     {
         static public void RAWYamlView(object currentSelected)
         {
-            rawYAMLList = new List<string>();
-            rawYAMLList = Yaml.YAMLSerializer.Serialize(currentSelected).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
-            rawYAMLList.ForEach(line => line.Replace("{}","empty"));
-            rawYAMLListView.SetSourceAsync(rawYAMLList);
-            rawYAMLWindow.Title = $"{((IKubernetesObject<V1ObjectMeta>)currentSelected).Name()} Yaml View"; 
-            rawYAMLWindow.Width = realtimeModeWindow.Bounds.Width - 5;
-            rawYAMLWindow.Height = realtimeModeWindow.Bounds.Height - 5;
-            rawYAMLWindow.Visible = true;
+            RealtimeModeControls.rawYAMLList = new List<string>();
+            RealtimeModeControls.rawYAMLList = Yaml.YAMLSerializer.Serialize(currentSelected).Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+            RealtimeModeControls.rawYAMLList.ForEach(line => line.Replace("{}","empty"));
+            RealtimeModeControls.rawYAMLListView.SetSourceAsync(RealtimeModeControls.rawYAMLList);
+            RealtimeModeControls.rawYAMLWindow.Title = $"{((IKubernetesObject<V1ObjectMeta>)currentSelected).Name()} Yaml View";
+            RealtimeModeControls.rawYAMLWindow.Width = RealtimeModeControls.realtimeModeWindow.Bounds.Width - 5;
+            RealtimeModeControls.rawYAMLWindow.Height = RealtimeModeControls.realtimeModeWindow.Bounds.Height - 5;
+            RealtimeModeControls.rawYAMLWindow.Visible = true;
             ;
         }
     }
