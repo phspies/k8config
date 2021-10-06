@@ -13,8 +13,7 @@ namespace k8config.Utilities
         public static void BuildAvailableAssemblyList()
         {
             List<GlobalAssemblyKubeType> tmpList = new List<GlobalAssemblyKubeType>();
-            NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
-            Log.Debug($"Loading Kubernetes models");
+            GlobalVariables.Log.Debug($"Loading Kubernetes models");
             try
             {
                 foreach (var assembly in GetAvailableAssemblyList().DistinctBy(x => x.Name))
@@ -35,10 +34,10 @@ namespace k8config.Utilities
             }
             catch (Exception ex)
             {
-                Log.Error($"Error loading Kubernetes models: {ex.Message}");
+                GlobalVariables.Log.Error($"Error loading Kubernetes models: {ex.Message}");
             }
-            Log.Debug($"Done loading Kubernetes models, {GlobalVariables.availableKubeTypes.Count} found!");
             GlobalVariables.availableKubeTypes = new List<GlobalAssemblyKubeType>(tmpList.OrderBy(x => x.classKind));
+            GlobalVariables.Log.Debug($"Done loading Kubernetes models, {GlobalVariables.availableKubeTypes.Count} found!");
         }
         public static IEnumerable<Type> GetAvailableAssemblyList()
         {

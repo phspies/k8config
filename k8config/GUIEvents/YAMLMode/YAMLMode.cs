@@ -1,5 +1,8 @@
 ﻿using k8config.DataModels;
 using k8config.GUIEvents;
+using k8config.Utilities;
+using System;
+using System.IO;
 using Terminal.Gui;
 
 namespace k8config
@@ -125,10 +128,25 @@ namespace k8config
 
             ToggleDisplayMode();
             paintYAML();
-            if (!string.IsNullOrWhiteSpace(GlobalVariables.startupString))
+            if (!string.IsNullOrWhiteSpace(GlobalVariables.startupFileLoad))
             {
-                UpdateMessageBar(GlobalVariables.startupString);
-                updateAvailableKindsList();
+                try
+                {
+                    if (File.Exists(GlobalVariables.startupFileLoad))
+                    {
+                        YAMLHandeling.DeserializeFile(GlobalVariables.startupFileLoad);
+                        UpdateMessageBar($"Loaded {GlobalVariables.sessionDefinedKinds.Count} definitions from {GlobalVariables.startupFileLoad}");
+                        updateAvailableKindsList();
+                    }
+                    else
+                    {
+                        UpdateMessageBar($"{GlobalVariables.startupFileLoad} does not exist");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UpdateMessageBar($"Failed to load {GlobalVariables.startupFileLoad}: {ex.Message}");
+                }
                 
             }
             UpdateDescriptionView();

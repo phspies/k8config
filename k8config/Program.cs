@@ -1,6 +1,7 @@
 ﻿using k8config.DataModels;
 using k8config.Utilities;
 using k8s;
+using k8s.Models;
 using NLog;
 using NLog.Targets;
 using System;
@@ -26,35 +27,6 @@ namespace k8config
                 Console.WriteLine($"Cannot create local data folder for k8config: {GlobalVariables.k8configAppFolder} : {ex.Message}");
                 Exit(1);
             }
-            Application.Init();
-
-            var config = new NLog.Config.LoggingConfiguration();
-            config.AddRule(
-                LogLevel.Debug, 
-                LogLevel.Fatal,
-                new FileTarget
-                {
-                    Name = "logfile",
-                    FileName = $"{GlobalVariables.k8configAppFolder}{Path.DirectorySeparatorChar}k8config.log",
-                    Layout = "${longdate}|${level:uppercase=true}|${message}",
-                },
-                "*");
-            LogManager.Configuration = config;
-
-
-            GlobalVariables.Log = LogManager.GetCurrentClassLogger();
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                GlobalVariables.Log.Debug($"This is a OSX client, using system console to GUI");
-                Application.UseSystemConsole = true;
-            }
-            else
-            {
-                GlobalVariables.Log.Debug($"This is a {RuntimeInformation.OSDescription} client");
-            }
-            AssemblySubsystem.BuildAvailableAssemblyList();
-
-
             if (args.Length > 0)
             {
                 args.ForEach(x =>
@@ -68,13 +40,11 @@ namespace k8config
                         case "--file":
                             try
                             {
-                                FileAttributes attr = File.GetAttributes(argvals[1]);
-                                YAMLHandeling.DeserializeFile(argvals[1]);
-                                GlobalVariables.startupString = $"Loaded {GlobalVariables.sessionDefinedKinds.Count} definitions from {argvals[1]}";
+                                GlobalVariables.startupFileLoad = argvals[1];
                             }
                             catch (Exception ex)
                             {
-                                Console.Error.WriteLine($"Cannot open file specified: {argvals[1]} : {ex.Message}");
+                                Console.WriteLine($"Cannot open file specified: {argvals[1]} : {ex.Message}");
                                 Exit(1);
                             }
                             break;
@@ -88,19 +58,49 @@ namespace k8config
                             Console.WriteLine($"--file=filename.yaml \t\t Specify YAML file to load on startup");
                             Exit(0);
                             break;
-                        default:                         
+                        default:
                             Console.WriteLine($"{argvals[0]} not known");
                             Exit(1);
                             break;
                     }
                 });
             }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Application.UseSystemConsole = true;
+            }
+            Application.Init();
+
+            var config = new NLog.Config.LoggingConfiguration();
+            config.AddRule(
+                LogLevel.Debug,
+                LogLevel.Fatal,
+                new FileTarget
+                {
+                    Name = "logfile",
+                    FileName = $"{GlobalVariables.k8configAppFolder}{Path.DirectorySeparatorChar}k8config.log",
+                    Layout = "${longdate}|${level:uppercase=true}|${message}",
+                },
+                "*");
+            LogManager.Configuration = config;
+            GlobalVariables.Log = LogManager.GetCurrentClassLogger();
+
+            AssemblySubsystem.BuildAvailableAssemblyList();
+            GlobalVariables.Log.Debug($"This is a {RuntimeInformation.OSDescription} client");
+
             try
             {
-                k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
-                Array.Resize(ref YAMLModelControls.interactiveStatusBarItems, 4);
-                YAMLModelControls.interactiveStatusBarItems[3] = YAMLModelControls.interactiveStatusBarItems[2];
-                YAMLModelControls.interactiveStatusBarItems[2] = new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); });
+                if (!string.IsNullOrWhiteSpace(GlobalVariables.proxyHost))
+                {
+                    k8Client = new Kubernetes(new KubernetesClientConfiguration { Host = GlobalVariables.proxyHost });
+                }
+                else
+                {
+                    k8Client = new Kubernetes(KubernetesClientConfiguration.BuildConfigFromConfigFile());
+                }
+                Array.Resize(ref YAMLModelControls.interactiveStatusBarItems, 3);
+                YAMLModelControls.interactiveStatusBarItems[2] = YAMLModelControls.interactiveStatusBarItems[1];
+                YAMLModelControls.interactiveStatusBarItems[1] = new StatusItem(Key.F10, "~F10~ Interactive Mode", () => { ToggleDisplayMode(); });
             }
             catch (Exception e)
             {
@@ -112,7 +112,9 @@ namespace k8config
             YamlModeKeyEvents();
             updateAvailableKindsList();
             topLevelWindowObject.Add(YAMLModelControls.k8configVersion);
+
             Application.Run(topLevelWindowObject);
+
         }
     }
 }

@@ -7,7 +7,7 @@
 	<Nullable>disable</Nullable>
 	<ApplicationIcon>Kubernetes Configurator Toolkit Logo.ico</ApplicationIcon>
       <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
-      <Version>1.22.0</Version>
+      <Version>1.22.0.1</Version>
       <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
       <DebugType>embedded</DebugType>
 

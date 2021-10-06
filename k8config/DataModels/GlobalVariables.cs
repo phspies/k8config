@@ -16,7 +16,7 @@ namespace k8config.DataModels
         public static bool currentavailableListUpDown = false;
         public static Logger Log;
         public static string proxyHost = string.Empty;
-        public static string startupString = string.Empty;
+        public static string startupFileLoad = string.Empty;
     }
  
 }

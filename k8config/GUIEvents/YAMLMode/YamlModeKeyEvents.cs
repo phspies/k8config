@@ -229,7 +229,7 @@ namespace k8config
                         }
                         else if (YAMLModePromptObject.CurrentPromptPositionIsRoot && currentInputText == "exit")
                         {
-                            Environment.Exit(0);
+                            Application.RequestStop(topLevelWindowObject);
                         }
                         else
                         {

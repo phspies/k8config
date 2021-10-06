@@ -38,7 +38,6 @@ namespace k8config.DataModels
             Visible = false,
         };
         public static StatusItem[] interactiveStatusBarItems = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ Validate", () => {
                     if (!validationWindow.Visible)
                     {

@@ -12,13 +12,11 @@ namespace k8config.DataModels
     public class RealtimeModeControls
     {
         public static StatusItem[] realtimeStatusBarItems = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F9, "~F9~ Apply", () => Program.ApplyDefinitions()),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => Program.ToggleDisplayMode()),
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarPodsSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
                     if (podsTableView.SelectedRow >= 0)
@@ -38,7 +36,6 @@ namespace k8config.DataModels
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarServicesSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
                     if (servicesTableView.SelectedRow >= 0)
@@ -58,7 +55,6 @@ namespace k8config.DataModels
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarDeploymentsSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
                     if (deploymentsTableView.SelectedRow >= 0)
@@ -78,7 +74,6 @@ namespace k8config.DataModels
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarNamespacesSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
                     if (namespaceTableView.SelectedRow >= 0)
@@ -98,7 +93,6 @@ namespace k8config.DataModels
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarRepSetsSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F2, "~F2~ RAW Yaml View", () =>
                 {
                     if (replicasetsTableView.SelectedRow >= 0)
@@ -118,7 +112,6 @@ namespace k8config.DataModels
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };
         public static StatusItem[] realtimeStatusBarEventsSelected = new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Quit", () => { if (Program.Quit()) { Environment.Exit(0); }}),
                 new StatusItem(Key.F10, "~F10~ YAML Mode", () => Program.ToggleDisplayMode()),
                 new StatusItem (Key.CharMask, "", null, true, new Terminal.Gui.Attribute(Color.BrightGreen, Color.DarkGray))
             };

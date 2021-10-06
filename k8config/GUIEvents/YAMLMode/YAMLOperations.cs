@@ -34,7 +34,7 @@ namespace k8config.GUIEvents.YAMLMode
             concernList = new List<string>();
             GlobalVariables.sessionDefinedKinds.ForEach(definedKind =>
             {
-                nestedLoopValidation(definedKind.KubeObject, $"/{definedKind.metaData.Name} ({definedKind.metaData.Kind})");
+                nestedLoopValidation(definedKind.KubeObject, $"/{definedKind.metaData.Metadata.Name}({definedKind.metaData.Kind})");
             });
             return concernList.Count > 0 ? concernList : new List<string>() { "All validations passed" };
         }
