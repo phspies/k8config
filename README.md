@@ -1,1 +1,1 @@
-# k8config
+Commandline utility to author and update kubernetes YAML files.
